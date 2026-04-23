@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 
-const API = 'http://localhost:8080';
+const API = 'https://phytolens-backend-production.up.railway.app';
 
 const LABELS = {
   bud:   { emoji: '🌿', color: '#4CAF50' },
