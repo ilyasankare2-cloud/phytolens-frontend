@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
-import { LABELS, EXTRA_INFO } from './shared/labels';
+import { LABELS, EXTRA_INFO, CONTRIB_LABELS } from './shared/labels';
 import { palette } from './shared/theme';
 import { compressImage } from './utils/imageCompress';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -193,7 +193,36 @@ function saveHistory(h) {
   try { localStorage.setItem('trichai_history', JSON.stringify(h)); } catch {}
 }
 
-const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, compact = false }) {
+const NotDetectedCard = memo(function NotDetectedCard({ imagePreview, onRetry }) {
+  return (
+    <div style={{...styles.result, borderColor: palette.border}}>
+      {imagePreview && <img src={imagePreview} alt="preview" style={styles.resultImage} />}
+      <div style={styles.notDetectedHeader}>
+        <span style={{fontSize: 40}}>🚫</span>
+        <div>
+          <p style={styles.notDetectedTitle}>No detecto cannabis</p>
+          <p style={styles.notDetectedSub}>La foto no parece contener cogollo, hachís ni planta.</p>
+        </div>
+      </div>
+      <div style={styles.notDetectedTipsBox}>
+        <p style={styles.notDetectedTipsTitle}>Para mejorar la detección</p>
+        <ul style={styles.notDetectedTipsList}>
+          <li>Acércate al producto, ocupa el centro de la foto</li>
+          <li>Buena iluminación, preferiblemente luz natural</li>
+          <li>Enfoque nítido, sin fondo desordenado</li>
+        </ul>
+      </div>
+      {onRetry && (
+        <button style={{...styles.btn, marginTop:8, marginBottom:0}} onClick={onRetry}>📷 Probar con otra foto</button>
+      )}
+    </div>
+  );
+});
+
+const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, compact = false, onRetry }) {
+  if (result.label === 'other') {
+    return <NotDetectedCard imagePreview={imagePreview} onRetry={onRetry} />;
+  }
   const conf = result.confidence * 100;
   return (
     <div style={{...styles.result, borderColor: cfg.color}}>
@@ -553,29 +582,33 @@ function AppInner() {
 
             {result && cfg && extra && (
               <>
-                <div style={styles.actionRow}>
-                  <button
-                    style={{...styles.actionBtn, ...styles.actionBtnPrimary}}
-                    onClick={async () => {
-                      setSharing(true);
-                      await shareResult(result, cfg, extra, preview, setSharePreview);
-                      setSharing(false);
-                    }}
-                    disabled={sharing}
-                  >
-                    {sharing ? <span style={styles.btnLoading}><span style={styles.spinnerSm}/>Generando…</span> : '↑ Compartir resultado'}
-                  </button>
-                  <button style={styles.actionBtn} onClick={reset}>
-                    🔄 Nueva foto
-                  </button>
-                </div>
+                {result.label !== 'other' && (
+                  <div style={styles.actionRow}>
+                    <button
+                      style={{...styles.actionBtn, ...styles.actionBtnPrimary}}
+                      onClick={async () => {
+                        setSharing(true);
+                        await shareResult(result, cfg, extra, preview, setSharePreview);
+                        setSharing(false);
+                      }}
+                      disabled={sharing}
+                    >
+                      {sharing ? <span style={styles.btnLoading}><span style={styles.spinnerSm}/>Generando…</span> : '↑ Compartir resultado'}
+                    </button>
+                    <button style={styles.actionBtn} onClick={reset}>
+                      🔄 Nueva foto
+                    </button>
+                  </div>
+                )}
 
-                <ResultCard result={result} imagePreview={preview} cfg={cfg} extra={extra} />
+                <ResultCard result={result} imagePreview={preview} cfg={cfg} extra={extra} onRetry={reset} />
 
-                <div style={styles.contributeInvite}>
-                  <p style={styles.contributeInviteText}>¿El resultado no es correcto?</p>
-                  <button style={styles.contributeInviteBtn} onClick={() => setMode('contribute')}>Corrígelo y mejora la IA →</button>
-                </div>
+                {result.label !== 'other' && (
+                  <div style={styles.contributeInvite}>
+                    <p style={styles.contributeInviteText}>¿El resultado no es correcto?</p>
+                    <button style={styles.contributeInviteBtn} onClick={() => setMode('contribute')}>Corrígelo y mejora la IA →</button>
+                  </div>
+                )}
               </>
             )}
           </>
@@ -633,9 +666,11 @@ function AppInner() {
                 <input ref={contribRef} type="file" accept="image/*" style={{display:'none'}} onChange={e => handleFile(e.target.files[0])} />
                 <p style={styles.labelTitle}>¿Qué hay en la foto?</p>
                 <div style={styles.labelGrid}>
-                  {Object.entries(LABELS).map(([key, val]) => (
-                    <button key={key} style={{...styles.labelBtn, ...(contribLabel === key ? {...styles.labelBtnActive, borderColor:val.color, color:val.color} : {})}} onClick={() => setContribLabel(key)}>
-                      {val.emoji} {val.text}
+                  {Object.entries(CONTRIB_LABELS).map(([key, val]) => (
+                    <button key={key} style={{...styles.labelBtn, ...(contribLabel === key ? {...styles.labelBtnActive, borderColor:val.color, color:val.color} : {})}} onClick={() => setContribLabel(key)} title={val.help}>
+                      <span style={{display:'block', fontSize:18, marginBottom:2}}>{val.emoji}</span>
+                      <span style={{display:'block', fontWeight:600, fontSize:13, lineHeight:1.2}}>{val.text}</span>
+                      <span style={{display:'block', fontSize:11, color:palette.dim, marginTop:3}}>{val.help}</span>
                     </button>
                   ))}
                 </div>
@@ -756,6 +791,14 @@ const styles = {
   modalTitle:    { color:palette.text, fontSize:16, fontWeight:700, margin:'0 0 14px', textAlign:'center', letterSpacing:'-0.2px' },
   modalImg:      { width:'100%', borderRadius:10, marginBottom:14, display:'block' },
   modalBtns:     { display:'flex', gap:8, alignItems:'center' },
+
+  // Not detected state (label === 'other')
+  notDetectedHeader:    { display:'flex', gap:14, alignItems:'center', marginBottom:18 },
+  notDetectedTitle:     { color:palette.text, fontSize:20, fontWeight:700, margin:'0 0 4px', letterSpacing:'-0.3px' },
+  notDetectedSub:       { color:palette.muted, fontSize:13, margin:0, lineHeight:1.5 },
+  notDetectedTipsBox:   { background:palette.card, border:`1px solid ${palette.border}`, borderRadius:12, padding:'14px 16px', marginBottom:14 },
+  notDetectedTipsTitle: { color:palette.text, fontSize:13, fontWeight:600, margin:'0 0 8px' },
+  notDetectedTipsList:  { color:palette.muted, fontSize:13, lineHeight:1.7, paddingLeft:20, margin:0 },
 
   // Empty state
   empty:         { textAlign:'center', padding:'48px 24px' },

@@ -6,8 +6,18 @@ import { palette } from './theme';
 export const LABELS = {
   bud:   { emoji: '🌿', color: palette.green,     text: 'Cogollo seco' },
   hash:  { emoji: '🟤', color: palette.hashBrown, text: 'Hachís / Resina' },
-  other: { emoji: '🔵', color: palette.otherBlue, text: 'Otro producto' },
+  other: { emoji: '🚫', color: palette.muted,     text: 'No es cannabis' },
   plant: { emoji: '🌱', color: palette.plantLime, text: 'Planta viva' },
+};
+
+// Labels users can pick when contributing a photo.
+// Note: 'other' = "this is NOT cannabis" (rejection class for training).
+// Helps the AI to not false-positive on hands, backgrounds, random objects.
+export const CONTRIB_LABELS = {
+  bud:   { emoji: '🌿', color: palette.green,     text: 'Cogollo seco', help: 'Flor seca, lista para consumir' },
+  hash:  { emoji: '🟤', color: palette.hashBrown, text: 'Hachís',       help: 'Resina prensada' },
+  plant: { emoji: '🌱', color: palette.plantLime, text: 'Planta viva',  help: 'En crecimiento o floración' },
+  other: { emoji: '🚫', color: palette.muted,     text: 'No aplica',    help: 'Foto sin cannabis: mano, fondo, objeto…' },
 };
 
 export const EXTRA_INFO = {
