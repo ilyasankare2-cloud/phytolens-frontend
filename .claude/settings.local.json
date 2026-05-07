@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls ~/Desktop/ 2>/dev/null || ls /mnt/c/Users/ilyas/Desktop/ 2>/dev/null)",
+      "Read(//mnt/c/Users/ilyas/**)",
+      "Bash(gh repo *)",
+      "Bash(python scrape.py)",
+      "Bash(sleep 15 && tail -30 /tmp/claude/c--Users-ilyas-Desktop-phytolens-frontendcd/74c03d2e-1767-44ef-a675-174bcab6e059/tasks/bctr15qvu.output 2>/dev/null || cat \"C:/Users/ilyas/AppData/Local/Temp/claude/c--Users-ilyas-Desktop-phytolens-frontendcd/74c03d2e-1767-44ef-a675-174bcab6e059/tasks/bctr15qvu.output\" 2>/dev/null)",
+      "Read(//tmp/claude/c--Users-ilyas-Desktop-phytolens-frontendcd/74c03d2e-1767-44ef-a675-174bcab6e059/tasks/**)"
+    ]
+  }
+}

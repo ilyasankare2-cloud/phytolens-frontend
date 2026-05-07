@@ -1,13 +1,68 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Design tokens — see docs/rfcs/0001-design-system.md */
+:root {
+  --bg:        #000000;
+  --surface:   #0a0a0a;
+  --card:      #111111;
+  --card-hi:   #161616;
+  --border:    rgba(255,255,255,0.06);
+  --border-hi: rgba(255,255,255,0.12);
+
+  --green:       #30d158;
+  --green-dim:   rgba(48,209,88,0.06);
+  --green-soft:  rgba(48,209,88,0.12);
+  --green-glow:  rgba(48,209,88,0.25);
+
+  --text:  #f5f5f7;
+  --muted: #6e6e73;
+  --dim:   #3d3d3f;
+
+  --warn:  #FF9800;
+  --error: #f44336;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+
+  --ease-out:    cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.4, 0, .2, 1);
 }
 
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+button { font-family: inherit; transition: opacity 0.15s var(--ease-out), transform 0.15s var(--ease-out), background 0.15s var(--ease-out); }
+button:not(:disabled):hover { opacity: 0.92; }
+button:not(:disabled):active { transform: scale(0.98); }
+button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--card) 0px, var(--card-hi) 200px, var(--card) 400px);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* Reveal */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.fade-up { animation: fadeUp 0.4s var(--ease-out) both; }
+
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, monospace;
 }

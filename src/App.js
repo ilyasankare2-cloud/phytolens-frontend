@@ -1,48 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { LABELS, EXTRA_INFO } from './shared/labels';
+import { palette } from './shared/theme';
+import { compressImage } from './utils/imageCompress';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const API = 'https://phytolens-backend-production.up.railway.app';
-
-const LABELS = {
-  bud:   { emoji: '🌿', color: '#4CAF50', text: 'Cogollo seco' },
-  hash:  { emoji: '🟤', color: '#795548', text: 'Hachís / Resina' },
-  other: { emoji: '🔵', color: '#2196F3', text: 'Otro producto' },
-  plant: { emoji: '🌱', color: '#8BC34A', text: 'Planta viva' },
-};
-
-const EXTRA_INFO = {
-  bud: {
-    effects:     ['Euforia', 'Relajación', 'Creatividad', 'Hambre'],
-    aroma:       ['Terroso', 'Cítrico', 'Pino', 'Dulce'],
-    consumption: ['Pipa', 'Porro', 'Vaporizador', 'Bong'],
-    moderation:  'Empieza con dosis baja. Espera 15 min antes de repetir.',
-    tip:         '💡 El vaporizador preserva mejor los terpenos y reduce el daño pulmonar.',
-    cbd:         '0.1% — 2%',
-  },
-  hash: {
-    effects:     ['Relajación profunda', 'Sedación', 'Analgesia', 'Euforia suave'],
-    aroma:       ['Terroso', 'Especiado', 'Dulce', 'Madera'],
-    consumption: ['Porro mezclado', 'Pipa', 'Hookah', 'Dab'],
-    moderation:  'Alta concentración. Usa cantidades muy pequeñas si eres principiante.',
-    tip:         '💡 El hash marroquí suele tener entre 20-35% THC. El bubble hash puede superar el 50%.',
-    cbd:         '1% — 5%',
-  },
-  other: {
-    effects:     ['Variable según producto', 'Puede ser muy potente'],
-    aroma:       ['Variable'],
-    consumption: ['Dab', 'Vaporizador', 'Oral'],
-    moderation:  'Los extractos son muy concentrados. Dosis mínimas para empezar.',
-    tip:         '💡 El rosin es el extracto más natural: solo presión y calor, sin solventes.',
-    cbd:         'Variable',
-  },
-  plant: {
-    effects:     ['Depende de variedad y fase'],
-    aroma:       ['Verde', 'Herbáceo', 'Floral'],
-    consumption: ['No aplica en esta fase'],
-    moderation:  'Planta en crecimiento. El THC se desarrolla en floración.',
-    tip:         '💡 Las plantas en pre-cosecha tienen los tricomas más visibles y potentes.',
-    cbd:         'Depende de variedad',
-  },
-};
 
 // ── SHARE CARD (Canvas) ───────────────────────────────────────────────────────
 function _rrect(ctx, x, y, w, h, r) {
@@ -231,7 +193,7 @@ function saveHistory(h) {
   try { localStorage.setItem('trichai_history', JSON.stringify(h)); } catch {}
 }
 
-function ResultCard({ result, imagePreview, cfg, extra, compact = false }) {
+const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, compact = false }) {
   const conf = result.confidence * 100;
   return (
     <div style={{...styles.result, borderColor: cfg.color}}>
@@ -243,7 +205,7 @@ function ResultCard({ result, imagePreview, cfg, extra, compact = false }) {
           <p style={{...styles.resultLabel, color: cfg.color}}>{result.display}</p>
           <p style={styles.resultConf}>Confianza: {conf.toFixed(1)}%</p>
           <div style={styles.qualityRow}>
-            <div style={{...styles.qualityDot, background: conf >= 85 ? '#4CAF50' : conf >= 65 ? '#FF9800' : '#f44336'}}/>
+            <div style={{...styles.qualityDot, background: conf >= 85 ? palette.green : conf >= 65 ? '#FF9800' : '#f44336'}}/>
             <p style={styles.resultQuality}>Calidad: {result.quality}</p>
           </div>
         </div>
@@ -336,9 +298,9 @@ function ResultCard({ result, imagePreview, cfg, extra, compact = false }) {
       )}
     </div>
   );
-}
+});
 
-export default function App() {
+function AppInner() {
   const [image, setImage]               = useState(null);
   const [preview, setPreview]           = useState(null);
   const [result, setResult]             = useState(null);
@@ -352,7 +314,6 @@ export default function App() {
   const [history, setHistory]           = useState(loadHistory);
   const [historyOpen, setHistoryOpen]   = useState(false);
   const [expandedHistory, setExpandedHistory] = useState(null);
-  const [copied, setCopied]             = useState(false);
   const [sharing, setSharing]           = useState(false);
   const [sharePreview, setSharePreview] = useState(null);
   const inputRef    = useRef();
@@ -366,21 +327,25 @@ export default function App() {
     };
   }, []);
 
-  const handleFile = (file) => {
+  const handleFile = useCallback(async (file) => {
     if (!file) return;
-    // Revoke the previous object URL before creating a new one
+    if (!file.type.startsWith('image/')) {
+      setError('El archivo debe ser una imagen.');
+      return;
+    }
     if (prevPreview.current) {
       URL.revokeObjectURL(prevPreview.current);
     }
-    const url = URL.createObjectURL(file);
+    const optimized = await compressImage(file);
+    const url = URL.createObjectURL(optimized);
     prevPreview.current = url;
-    setImage(file);
+    setImage(optimized);
     setPreview(url);
     setResult(null);
     setError(null);
     setContribSent(false);
     setContribError(null);
-  };
+  }, []);
 
   const analyze = async () => {
     if (!image) return;
@@ -464,24 +429,6 @@ export default function App() {
     setExpandedHistory(null);
   };
 
-  const copyResult = () => {
-    if (!result) return;
-    const extra = EXTRA_INFO[result.label];
-    const text = [
-      `🔬 TrichAI — Resultado`,
-      `Categoría: ${result.display}`,
-      `Confianza: ${(result.confidence * 100).toFixed(1)}%`,
-      `THC estimado: ${result.thc_estimate}% (${result.thc_min}%–${result.thc_max}%)`,
-      `CBD típico: ${extra.cbd}`,
-      `Efectos: ${extra.effects.join(', ')}`,
-      `Variedades: ${result.varieties.join(', ')}`,
-    ].join('\n');
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
   const cfg   = result ? LABELS[result.label] : null;
   const extra = result ? EXTRA_INFO[result.label] : null;
 
@@ -498,7 +445,12 @@ export default function App() {
           </div>
 
           {history.length === 0 && (
-            <p style={{color:'#444', textAlign:'center', marginTop:40}}>No hay análisis todavía.</p>
+            <div style={styles.empty}>
+              <div style={styles.emptyIcon}>📷</div>
+              <p style={styles.emptyTitle}>Aún no has analizado nada</p>
+              <p style={styles.emptyText}>Cada análisis se guarda aquí automáticamente.<br/>Tu historial vive en este dispositivo.</p>
+              <button style={styles.emptyBtn} onClick={() => { setHistoryOpen(false); }}>Analizar mi primera foto →</button>
+            </div>
           )}
 
           {expanded ? (
@@ -574,19 +526,36 @@ export default function App() {
             </div>
             <input ref={inputRef} type="file" accept="image/*" style={{display:'none'}} onChange={e => handleFile(e.target.files[0])} />
 
-            <button style={{...styles.btn, opacity:(!image||loading)?0.5:1}} onClick={analyze} disabled={!image||loading}>
-              {loading ? '🔍 Analizando...' : 'Analizar imagen'}
+            <button style={{...styles.btn, opacity:(!image||loading)?0.6:1, cursor:(!image||loading)?'not-allowed':'pointer'}} onClick={analyze} disabled={!image||loading}>
+              {loading ? <span style={styles.btnLoading}><span style={styles.spinner}/>Analizando con IA…</span> : 'Analizar imagen'}
             </button>
-            {error && <p style={styles.error}>{error}</p>}
+            {loading && (
+              <div style={styles.skeletonCard}>
+                <div className="skeleton" style={{width:120, height:14, marginBottom:10}}/>
+                <div className="skeleton" style={{width:'60%', height:24, marginBottom:8}}/>
+                <div className="skeleton" style={{width:'40%', height:14, marginBottom:18}}/>
+                <div style={{display:'flex', gap:8, marginBottom:14}}>
+                  <div className="skeleton" style={{flex:1, height:62}}/>
+                  <div className="skeleton" style={{flex:1, height:62}}/>
+                </div>
+                <div className="skeleton" style={{width:'100%', height:32}}/>
+              </div>
+            )}
+            {error && (
+              <div style={styles.errorBox}>
+                <span style={{fontSize:18}}>⚠️</span>
+                <div>
+                  <p style={styles.errorTitle}>{error}</p>
+                  <button style={styles.errorRetry} onClick={analyze} disabled={!image||loading}>Reintentar</button>
+                </div>
+              </div>
+            )}
 
             {result && cfg && extra && (
               <>
                 <div style={styles.actionRow}>
-                  <button style={styles.actionBtn} onClick={copyResult}>
-                    {copied ? '✅ Copiado' : '📋 Copiar'}
-                  </button>
                   <button
-                    style={{...styles.actionBtn, borderColor:'#4CAF5066', color:'#4CAF50'}}
+                    style={{...styles.actionBtn, ...styles.actionBtnPrimary}}
                     onClick={async () => {
                       setSharing(true);
                       await shareResult(result, cfg, extra, preview, setSharePreview);
@@ -594,10 +563,10 @@ export default function App() {
                     }}
                     disabled={sharing}
                   >
-                    {sharing ? '⏳' : '↑ Compartir'}
+                    {sharing ? <span style={styles.btnLoading}><span style={styles.spinnerSm}/>Generando…</span> : '↑ Compartir resultado'}
                   </button>
                   <button style={styles.actionBtn} onClick={reset}>
-                    🔄 Nueva
+                    🔄 Nueva foto
                   </button>
                 </div>
 
@@ -683,9 +652,17 @@ export default function App() {
   );
 }
 
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppInner />
+    </ErrorBoundary>
+  );
+}
+
 const styles = {
-  container:     { minHeight:'100vh', background:'#0D0D0D', display:'flex', alignItems:'center', justifyContent:'center', padding:16 },
-  card:          { background:'#1A1A1A', borderRadius:16, padding:32, width:'100%', maxWidth:500, boxShadow:'0 4px 32px rgba(0,0,0,0.5)' },
+  container:     { minHeight:'100vh', background:palette.bg, display:'flex', alignItems:'center', justifyContent:'center', padding:16, fontFamily:"'Inter', -apple-system, sans-serif" },
+  card:          { background:palette.surface, borderRadius:18, padding:32, width:'100%', maxWidth:500, boxShadow:'0 24px 60px -10px rgba(0,0,0,0.6)', border:`1px solid ${palette.border}` },
 
   header:        { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 },
   title:         { color:'#fff', fontSize:28, fontWeight:700, margin:0 },
@@ -694,17 +671,18 @@ const styles = {
 
   tabs:          { display:'flex', gap:8, marginBottom:24 },
   tab:           { flex:1, padding:'10px 0', background:'#111', color:'#555', border:'1px solid #222', borderRadius:8, fontSize:14, cursor:'pointer', fontWeight:500 },
-  tabActive:     { background:'#4CAF50', color:'#fff', border:'1px solid #4CAF50' },
+  tabActive:     { background:palette.green, color:'#000', border:`1px solid ${palette.green}`, fontWeight:700 },
 
   dropzone:      { border:'2px dashed #2a2a2a', borderRadius:12, minHeight:200, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', marginBottom:16 },
   placeholder:   { textAlign:'center', color:'#444' },
   dropText:      { color:'#444', fontSize:14, marginTop:8 },
   preview:       { width:'100%', maxHeight:300, objectFit:'cover' },
-  btn:           { width:'100%', padding:'14px 0', background:'#4CAF50', color:'#fff', border:'none', borderRadius:10, fontSize:16, fontWeight:600, cursor:'pointer', marginBottom:16 },
+  btn:           { width:'100%', padding:'14px 0', background:palette.green, color:'#fff', border:'none', borderRadius:10, fontSize:16, fontWeight:600, cursor:'pointer', marginBottom:16 },
   error:         { color:'#f44336', textAlign:'center', fontSize:14, marginBottom:12 },
 
-  actionRow:     { display:'flex', gap:8, marginBottom:16 },
-  actionBtn:     { flex:1, padding:'9px 0', background:'#111', border:'1px solid #222', color:'#888', borderRadius:8, fontSize:13, cursor:'pointer' },
+  actionRow:        { display:'flex', gap:8, marginBottom:16 },
+  actionBtn:        { flex:1, padding:'11px 0', background:palette.card, border:`1px solid ${palette.border}`, color:palette.muted, borderRadius:980, fontSize:13, fontWeight:500, cursor:'pointer' },
+  actionBtnPrimary: { flex:2, background:palette.greenSoft, color:palette.green, border:`1px solid ${palette.green}40`, fontWeight:700, fontSize:14 },
 
   result:        { border:'2px solid', borderRadius:12, padding:20, marginTop:8 },
   resultImage:   { width:'100%', maxHeight:220, objectFit:'cover', borderRadius:8, marginBottom:16 },
@@ -763,7 +741,7 @@ const styles = {
 
   topBar:        { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 },
   topTitle:      { color:'#fff', fontSize:18, fontWeight:700, margin:0 },
-  backBtn:       { background:'none', border:'none', color:'#4CAF50', fontSize:15, cursor:'pointer', padding:0 },
+  backBtn:       { background:'none', border:'none', color:palette.green, fontSize:15, cursor:'pointer', padding:0 },
   clearBtn:      { background:'none', border:'none', color:'#f44336', fontSize:14, cursor:'pointer', padding:0 },
   historyItem:   { display:'flex', alignItems:'center', gap:12, background:'#111', borderRadius:12, padding:12, border:'1px solid', cursor:'pointer' },
   historyThumbWrap: { width:56, height:56, borderRadius:8, overflow:'hidden', flexShrink:0, background:'#222' },
@@ -773,9 +751,35 @@ const styles = {
   historyDate:   { color:'#444', fontSize:11, margin:0 },
   historyArrow:  { color:'#333', fontSize:22, flexShrink:0 },
 
-  modalOverlay:  { position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:16 },
-  modalBox:      { background:'#111', borderRadius:16, padding:20, width:'100%', maxWidth:420, border:'1px solid #222' },
-  modalTitle:    { color:'#fff', fontSize:16, fontWeight:700, margin:'0 0 14px', textAlign:'center' },
+  modalOverlay:  { position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:16, backdropFilter:'blur(8px)' },
+  modalBox:      { background:palette.card, borderRadius:18, padding:20, width:'100%', maxWidth:420, border:`1px solid ${palette.border}` },
+  modalTitle:    { color:palette.text, fontSize:16, fontWeight:700, margin:'0 0 14px', textAlign:'center', letterSpacing:'-0.2px' },
   modalImg:      { width:'100%', borderRadius:10, marginBottom:14, display:'block' },
   modalBtns:     { display:'flex', gap:8, alignItems:'center' },
+
+  // Empty state
+  empty:         { textAlign:'center', padding:'48px 24px' },
+  emptyIcon:     { fontSize:48, marginBottom:18, opacity:0.6 },
+  emptyTitle:    { color:palette.text, fontSize:17, fontWeight:600, margin:'0 0 8px', letterSpacing:'-0.2px' },
+  emptyText:     { color:palette.muted, fontSize:13, lineHeight:1.6, margin:'0 0 24px' },
+  emptyBtn:      { background:palette.greenSoft, color:palette.green, border:`1px solid ${palette.green}40`, borderRadius:980, padding:'10px 20px', fontSize:13, fontWeight:600, cursor:'pointer' },
+
+  // Skeleton + loading
+  btnLoading:    { display:'inline-flex', alignItems:'center', gap:10, justifyContent:'center', width:'100%' },
+  spinner:       { width:14, height:14, borderRadius:'50%', border:'2px solid rgba(0,0,0,0.2)', borderTopColor:'#000', animation:'spin 0.7s linear infinite', display:'inline-block' },
+  spinnerSm:     { width:12, height:12, borderRadius:'50%', border:`2px solid ${palette.green}33`, borderTopColor:palette.green, animation:'spin 0.7s linear infinite', display:'inline-block' },
+  skeletonCard:  { background:palette.surface, border:`1px solid ${palette.border}`, borderRadius:14, padding:20, marginTop:8 },
+
+  // Error box (premium)
+  errorBox:      { display:'flex', gap:12, alignItems:'flex-start', background:'rgba(244,67,54,0.08)', border:'1px solid rgba(244,67,54,0.25)', borderRadius:12, padding:'12px 14px', marginBottom:12 },
+  errorTitle:    { color:palette.text, fontSize:13, margin:'0 0 6px', lineHeight:1.4 },
+  errorRetry:    { background:'transparent', border:`1px solid ${palette.error}55`, color:palette.error, borderRadius:980, padding:'4px 12px', fontSize:12, fontWeight:600, cursor:'pointer' },
 };
+
+// Inject keyframes for spinner (shimmer is in index.css)
+if (typeof document !== 'undefined' && !document.getElementById('trichai-keyframes')) {
+  const s = document.createElement('style');
+  s.id = 'trichai-keyframes';
+  s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(s);
+}
