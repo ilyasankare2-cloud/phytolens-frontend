@@ -142,20 +142,36 @@ export default function App() {
   const [contribLabel, setContribLabel] = useState('');
   const [contribSent, setContribSent]   = useState(false);
   const [contribLoading, setContribLoading] = useState(false);
+  const [contribError, setContribError] = useState(null);
   const [history, setHistory]           = useState(loadHistory);
   const [historyOpen, setHistoryOpen]   = useState(false);
   const [expandedHistory, setExpandedHistory] = useState(null);
   const [copied, setCopied]             = useState(false);
-  const inputRef   = useRef();
-  const contribRef = useRef();
+  const inputRef    = useRef();
+  const contribRef  = useRef();
+  const prevPreview = useRef(null);  // tracks current object URL for revocation
+
+  // Revoke object URL on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (prevPreview.current) URL.revokeObjectURL(prevPreview.current);
+    };
+  }, []);
 
   const handleFile = (file) => {
     if (!file) return;
+    // Revoke the previous object URL before creating a new one
+    if (prevPreview.current) {
+      URL.revokeObjectURL(prevPreview.current);
+    }
+    const url = URL.createObjectURL(file);
+    prevPreview.current = url;
     setImage(file);
-    setPreview(URL.createObjectURL(file));
+    setPreview(url);
     setResult(null);
     setError(null);
     setContribSent(false);
+    setContribError(null);
   };
 
   const analyze = async () => {
@@ -167,9 +183,12 @@ export default function App() {
       form.append('file', image);
       const res  = await fetch(`${API}/analyze`, { method: 'POST', body: form });
       const data = await res.json();
+      if (!res.ok) {
+        setError(data.detail || 'Error al analizar la imagen.');
+        return;
+      }
       if (data.success) {
         setResult(data.result);
-        // save to history with image as base64
         const reader = new FileReader();
         reader.onload = (e) => {
           const entry = {
@@ -196,24 +215,38 @@ export default function App() {
   const contribute = async () => {
     if (!image || !contribLabel) return;
     setContribLoading(true);
+    setContribError(null);
     try {
       const form = new FormData();
       form.append('file', image);
       form.append('label', contribLabel);
-      await fetch(`${API}/contribute`, { method: 'POST', body: form }).catch(() => {});
+      const res = await fetch(`${API}/contribute`, { method: 'POST', body: form });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || `Error ${res.status}`);
+      }
+      const data = await res.json();
+      if (!data.success) throw new Error('El servidor rechazó la foto.');
       setContribSent(true);
+    } catch (err) {
+      setContribError('No se pudo enviar la foto. Inténtalo de nuevo.');
     } finally {
       setContribLoading(false);
     }
   };
 
   const reset = () => {
+    if (prevPreview.current) {
+      URL.revokeObjectURL(prevPreview.current);
+      prevPreview.current = null;
+    }
     setImage(null);
     setPreview(null);
     setResult(null);
     setError(null);
     setContribSent(false);
     setContribLabel('');
+    setContribError(null);
   };
 
   const clearHistory = () => {
@@ -225,7 +258,6 @@ export default function App() {
 
   const copyResult = () => {
     if (!result) return;
-    const cfg   = LABELS[result.label];
     const extra = EXTRA_INFO[result.label];
     const text = [
       `🔬 TrichAI — Resultado`,
@@ -341,7 +373,6 @@ export default function App() {
 
             {result && cfg && extra && (
               <>
-                {/* Action buttons */}
                 <div style={styles.actionRow}>
                   <button style={styles.actionBtn} onClick={copyResult}>
                     {copied ? '✅ Copiado' : '📋 Copiar resultado'}
@@ -393,6 +424,7 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+                {contribError && <p style={styles.error}>{contribError}</p>}
                 <button style={{...styles.btn, opacity:(!image||!contribLabel||contribLoading)?0.5:1}} onClick={contribute} disabled={!image||!contribLabel||contribLoading}>
                   {contribLoading ? 'Enviando...' : 'Enviar foto'}
                 </button>
@@ -423,7 +455,7 @@ const styles = {
   dropText:      { color:'#444', fontSize:14, marginTop:8 },
   preview:       { width:'100%', maxHeight:300, objectFit:'cover' },
   btn:           { width:'100%', padding:'14px 0', background:'#4CAF50', color:'#fff', border:'none', borderRadius:10, fontSize:16, fontWeight:600, cursor:'pointer', marginBottom:16 },
-  error:         { color:'#f44336', textAlign:'center', fontSize:14 },
+  error:         { color:'#f44336', textAlign:'center', fontSize:14, marginBottom:12 },
 
   actionRow:     { display:'flex', gap:8, marginBottom:16 },
   actionBtn:     { flex:1, padding:'9px 0', background:'#111', border:'1px solid #222', color:'#888', borderRadius:8, fontSize:13, cursor:'pointer' },
@@ -477,7 +509,6 @@ const styles = {
   successTitle:  { color:'#fff', fontSize:20, fontWeight:700, margin:'12px 0 4px' },
   successSub:    { color:'#555', fontSize:14, marginBottom:24 },
 
-  // History view
   topBar:        { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 },
   topTitle:      { color:'#fff', fontSize:18, fontWeight:700, margin:0 },
   backBtn:       { background:'none', border:'none', color:'#4CAF50', fontSize:15, cursor:'pointer', padding:0 },
