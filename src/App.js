@@ -116,6 +116,34 @@ function ResultCard({ result, imagePreview, cfg, extra, compact = false }) {
             {result.varieties.map(v => <span key={v} style={{...styles.badge, borderColor: cfg.color, color: cfg.color}}>{v}</span>)}
           </div>
 
+          {result.visual_traits && (
+            <>
+              <p style={styles.sectionTitle}>🔬 Rasgos visuales</p>
+              <div style={styles.traitsGrid}>
+                <div style={styles.traitBox}>
+                  <p style={styles.traitLabel}>Tricomas</p>
+                  <p style={styles.traitValue}>{result.visual_traits.trichomes}</p>
+                  <p style={styles.traitSub}>{result.visual_traits.trichome_coverage.toFixed(1)}% cobertura</p>
+                </div>
+                <div style={styles.traitBox}>
+                  <p style={styles.traitLabel}>Textura</p>
+                  <p style={styles.traitValue}>{result.visual_traits.texture}</p>
+                  <p style={styles.traitSub}>Rugosidad {result.visual_traits.roughness.toFixed(0)}/100</p>
+                </div>
+                <div style={styles.traitBox}>
+                  <p style={styles.traitLabel}>Curación</p>
+                  <p style={styles.traitValue}>{result.visual_traits.cure}</p>
+                  <p style={styles.traitSub}>Brillo {result.visual_traits.brightness.toFixed(0)}%</p>
+                </div>
+                <div style={styles.traitBox}>
+                  <p style={styles.traitLabel}>Color base</p>
+                  <div style={{width:24,height:24,borderRadius:'50%',background:`rgb(${result.visual_traits.dominant_color.join(',')})`,margin:'4px auto',border:'1px solid #333'}}/>
+                  <p style={styles.traitSub}>RGB dominante</p>
+                </div>
+              </div>
+            </>
+          )}
+
           <p style={styles.sectionTitle}>📊 Análisis completo</p>
           <div style={styles.bars}>
             {Object.entries(result.all_probs).map(([key, val]) => (
@@ -486,6 +514,12 @@ const styles = {
 
   tipBox:        { background:'#0f1a0f', borderRadius:10, padding:12, marginBottom:8, border:'1px solid #2a4a2a' },
   tipText:       { color:'#8BC34A', fontSize:13, margin:0, lineHeight:1.5 },
+
+  traitsGrid:    { display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 },
+  traitBox:      { background:'#111', borderRadius:10, padding:12, textAlign:'center' },
+  traitLabel:    { color:'#555', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5, margin:'0 0 4px' },
+  traitValue:    { color:'#ddd', fontSize:13, fontWeight:700, margin:'0 0 3px' },
+  traitSub:      { color:'#444', fontSize:11, margin:0 },
 
   bars:          { display:'flex', flexDirection:'column', gap:8 },
   barRow:        { display:'flex', alignItems:'center', gap:8 },
