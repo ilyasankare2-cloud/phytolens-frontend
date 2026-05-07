@@ -1,33 +1,33 @@
 # TrichAI Web
 
-Cannabis identification tool powered by AI. Upload a photo, get category, estimated THC, effects, visual traits and more.
+Identificador de cannabis con IA. Sube una foto y obtén la categoría, THC estimado, efectos, rasgos visuales y más.
 
-[![Vercel](https://img.shields.io/badge/deployed-Vercel-black)](https://vercel.com)
+[![Vercel](https://img.shields.io/badge/desplegado-Vercel-black)](https://vercel.com)
 [![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev)
 
 **[trichai.vercel.app](https://trichai.vercel.app)**
 
 ## Stack
 
-React 19 + Create React App. No router, no state library, no CSS framework. The whole app is `src/App.js` with inline styles.
+React 19 + Create React App. Sin router, sin librería de estado, sin framework CSS. Toda la app vive en `src/App.js` con estilos inline.
 
-Navigation is handled by a `mode` state variable (`analyze | contribute`) and a `historyOpen` boolean. No dependencies beyond what CRA ships with.
+La navegación se controla con una variable de estado `mode` (`analyze | contribute`) y un booleano `historyOpen`. Sin dependencias adicionales a las que trae CRA.
 
-## Running locally
+## Ejecutar en local
 
 ```bash
 npm install
 npm start
 ```
 
-The backend URL is a constant at the top of `src/App.js`. Point it to your local backend if needed.
+La URL del backend es una constante al inicio de `src/App.js`. Cámbiala si quieres apuntar a un backend local.
 
-## How the data flows
+## Flujo de datos
 
-1. User picks a file → `URL.createObjectURL()` for preview (revoked on reset)
-2. `analyze()` posts to `/analyze` → result stored in state → entry saved to `localStorage` with base64 image
-3. History survives page refreshes, capped at 50 entries under key `trichai_history`
+1. El usuario selecciona un archivo → `URL.createObjectURL()` para preview (se revoca al resetear)
+2. `analyze()` hace POST a `/analyze` → resultado en estado → entrada guardada en `localStorage` con imagen en base64
+3. El historial sobrevive recargas de página, limitado a 50 entradas bajo la clave `trichai_history`
 
-## Deployment
+## Despliegue
 
-Push to `main` → Vercel deploys automatically. Security headers (CSP, X-Frame-Options, etc.) are set in `vercel.json`.
+Push a `main` → Vercel despliega automáticamente. Las cabeceras de seguridad (CSP, X-Frame-Options, etc.) están configuradas en `vercel.json`.
