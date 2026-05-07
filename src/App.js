@@ -44,6 +44,287 @@ const EXTRA_INFO = {
   },
 };
 
+// ── SHARE CARD (Canvas) ───────────────────────────────────────────────────────
+function _rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function _wrap(ctx, text, x, y, maxW, lh, maxLines = 2) {
+  const words = text.split(' ');
+  let line = '', n = 0;
+  for (const w of words) {
+    const t = line + w + ' ';
+    if (ctx.measureText(t).width > maxW && line) {
+      ctx.fillText(line.trim(), x, y + n * lh);
+      line = w + ' '; n++;
+      if (n >= maxLines) return;
+    } else { line = t; }
+  }
+  if (n < maxLines) ctx.fillText(line.trim(), x, y + n * lh);
+}
+
+function buildShareCard(result, cfg, extra) {
+  const W = 600, H = 480, S = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = W * S; canvas.height = H * S;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(S, S);
+
+  // Background
+  ctx.fillStyle = '#0D0D0D'; ctx.fillRect(0, 0, W, H);
+
+  // Top stripe
+  ctx.fillStyle = cfg.color; ctx.fillRect(0, 0, W, 5);
+
+  // Bottom bar
+  ctx.fillStyle = '#111'; ctx.fillRect(0, H - 44, W, 44);
+
+  // Header
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 17px -apple-system,sans-serif';
+  ctx.fillText('TrichAI', 28, 44);
+  ctx.fillStyle = '#444';
+  ctx.font = '13px -apple-system,sans-serif';
+  ctx.fillText('Análisis de cannabis con IA', 28, 63);
+
+  // Divider
+  ctx.fillStyle = '#1e1e1e'; ctx.fillRect(28, 78, W - 56, 1);
+
+  // Category
+  ctx.fillStyle = cfg.color;
+  ctx.font = 'bold 34px -apple-system,sans-serif';
+  ctx.fillText(`${cfg.emoji}  ${result.display}`, 28, 132);
+
+  // Confidence
+  const conf = (result.confidence * 100).toFixed(1);
+  ctx.fillStyle = '#777';
+  ctx.font = '14px -apple-system,sans-serif';
+  ctx.fillText(`Confianza ${conf}%  ·  Calidad ${result.quality}`, 28, 158);
+
+  // THC box
+  ctx.fillStyle = '#161616'; _rrect(ctx, 28, 176, 155, 76, 10); ctx.fill();
+  ctx.fillStyle = cfg.color;
+  ctx.font = 'bold 38px -apple-system,sans-serif';
+  ctx.fillText(`${result.thc_estimate}%`, 44, 228);
+  ctx.fillStyle = '#555'; ctx.font = '12px -apple-system,sans-serif';
+  ctx.fillText('THC estimado', 44, 244);
+
+  // CBD box
+  ctx.fillStyle = '#161616'; _rrect(ctx, 196, 176, 155, 76, 10); ctx.fill();
+  ctx.fillStyle = '#aaa';
+  ctx.font = 'bold 20px -apple-system,sans-serif';
+  ctx.fillText(extra.cbd, 212, 224);
+  ctx.fillStyle = '#555'; ctx.font = '12px -apple-system,sans-serif';
+  ctx.fillText('CBD típico', 212, 244);
+
+  // Effects
+  ctx.fillStyle = '#444'; ctx.font = 'bold 10px -apple-system,sans-serif';
+  ctx.fillText('EFECTOS', 28, 280);
+  let ex = 28;
+  ctx.font = '12px -apple-system,sans-serif';
+  extra.effects.slice(0, 4).forEach(e => {
+    const ew = ctx.measureText(e).width + 20;
+    ctx.strokeStyle = cfg.color; ctx.lineWidth = 1;
+    _rrect(ctx, ex, 290, ew, 24, 12); ctx.stroke();
+    ctx.fillStyle = cfg.color; ctx.fillText(e, ex + 10, 306);
+    ex += ew + 8;
+  });
+
+  // Trichomes
+  if (result.visual_traits) {
+    ctx.fillStyle = '#444'; ctx.font = 'bold 10px -apple-system,sans-serif';
+    ctx.fillText('RASGOS VISUALES', 28, 342);
+    ctx.fillStyle = '#666'; ctx.font = '13px -apple-system,sans-serif';
+    ctx.fillText(`Tricomas ${result.visual_traits.trichomes}  ·  Textura ${result.visual_traits.texture}  ·  ${result.visual_traits.cure}`, 28, 360);
+  }
+
+  // Description
+  ctx.fillStyle = '#555'; ctx.font = '13px -apple-system,sans-serif';
+  _wrap(ctx, result.description, 28, 390, W - 56, 18);
+
+  // Bottom
+  ctx.fillStyle = '#444'; ctx.font = '13px -apple-system,sans-serif';
+  ctx.fillText('trichai.vercel.app', 28, H - 16);
+  ctx.fillStyle = cfg.color; ctx.font = 'bold 13px -apple-system,sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('Analiza la tuya gratis →', W - 28, H - 16);
+  ctx.textAlign = 'left';
+
+  return canvas;
+}
+
+function buildShareCardWithImage(result, cfg, extra, imageSrc) {
+  return new Promise(resolve => {
+    const W = 600, H = 860, S = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = W * S; canvas.height = H * S;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(S, S);
+
+    const draw = () => {
+      // Background
+      ctx.fillStyle = '#080808'; ctx.fillRect(0, 0, W, H);
+
+      // Glow behind image
+      const grd = ctx.createRadialGradient(W/2, 220, 10, W/2, 220, 320);
+      grd.addColorStop(0, cfg.color + '22');
+      grd.addColorStop(1, 'transparent');
+      ctx.fillStyle = grd; ctx.fillRect(0, 0, W, 480);
+
+      // Photo
+      if (imageSrc) {
+        ctx.save();
+        _rrect(ctx, 0, 0, W, 420, 0); ctx.clip();
+        ctx.drawImage(imageSrc, 0, 0, W, 420);
+        // gradient overlay bottom of photo
+        const fade = ctx.createLinearGradient(0, 250, 0, 420);
+        fade.addColorStop(0, 'transparent');
+        fade.addColorStop(1, '#080808');
+        ctx.fillStyle = fade; ctx.fillRect(0, 0, W, 420);
+        ctx.restore();
+      }
+
+      // Top stripe glow
+      const topGlow = ctx.createLinearGradient(0, 0, W, 0);
+      topGlow.addColorStop(0, cfg.color);
+      topGlow.addColorStop(1, cfg.color + '44');
+      ctx.fillStyle = topGlow; ctx.fillRect(0, 0, W, 4);
+
+      // Logo
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px -apple-system,sans-serif';
+      ctx.fillText('🔬 TrichAI', 24, 36);
+      ctx.fillStyle = '#ffffff44';
+      ctx.font = '12px -apple-system,sans-serif';
+      ctx.fillText('AI Cannabis Analysis', 24, 54);
+
+      // Category pill
+      ctx.fillStyle = cfg.color + '22';
+      _rrect(ctx, 24, imageSrc ? 390 : 80, 180, 32, 16); ctx.fill();
+      ctx.strokeStyle = cfg.color + '66'; ctx.lineWidth = 1;
+      _rrect(ctx, 24, imageSrc ? 390 : 80, 180, 32, 16); ctx.stroke();
+      ctx.fillStyle = cfg.color;
+      ctx.font = 'bold 13px -apple-system,sans-serif';
+      ctx.fillText(`${cfg.emoji}  ${result.display}`, 40, imageSrc ? 411 : 101);
+
+      const yBase = imageSrc ? 450 : 140;
+
+      // Big confidence
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 56px -apple-system,sans-serif';
+      ctx.fillText(`${(result.confidence * 100).toFixed(0)}%`, 24, yBase + 62);
+      ctx.fillStyle = '#555';
+      ctx.font = '13px -apple-system,sans-serif';
+      ctx.fillText('confianza del modelo', 24, yBase + 82);
+
+      // Confidence bar
+      ctx.fillStyle = '#1a1a1a'; _rrect(ctx, 24, yBase + 94, W - 48, 6, 3); ctx.fill();
+      ctx.fillStyle = cfg.color; _rrect(ctx, 24, yBase + 94, (W - 48) * result.confidence, 6, 3); ctx.fill();
+
+      // THC + CBD cards
+      const cardY = yBase + 116;
+      [[`${result.thc_estimate}%`, 'THC estimado', cfg.color], [extra.cbd, 'CBD típico', '#888']].forEach(([val, label, col], i) => {
+        const cx = 24 + i * 188;
+        ctx.fillStyle = '#111'; _rrect(ctx, cx, cardY, 175, 72, 12); ctx.fill();
+        ctx.strokeStyle = col + '33'; ctx.lineWidth = 1;
+        _rrect(ctx, cx, cardY, 175, 72, 12); ctx.stroke();
+        ctx.fillStyle = col;
+        ctx.font = 'bold 30px -apple-system,sans-serif';
+        ctx.fillText(val, cx + 16, cardY + 42);
+        ctx.fillStyle = '#555'; ctx.font = '12px -apple-system,sans-serif';
+        ctx.fillText(label, cx + 16, cardY + 58);
+      });
+
+      // Visual traits
+      if (result.visual_traits) {
+        const tY = cardY + 88;
+        ctx.fillStyle = '#333'; ctx.font = 'bold 10px -apple-system,sans-serif';
+        ctx.fillText('RASGOS VISUALES', 24, tY);
+        const traits = [
+          ['Tricomas', result.visual_traits.trichomes],
+          ['Textura', result.visual_traits.texture],
+          ['Curación', result.visual_traits.cure],
+        ];
+        traits.forEach(([k, v], i) => {
+          const tx = 24 + i * 190;
+          ctx.fillStyle = '#1a1a1a'; _rrect(ctx, tx, tY + 10, 175, 50, 10); ctx.fill();
+          ctx.fillStyle = '#666'; ctx.font = '10px -apple-system,sans-serif';
+          ctx.fillText(k.toUpperCase(), tx + 12, tY + 28);
+          ctx.fillStyle = '#ccc'; ctx.font = 'bold 14px -apple-system,sans-serif';
+          ctx.fillText(v, tx + 12, tY + 48);
+        });
+      }
+
+      // Effects
+      const effY = cardY + 170;
+      ctx.fillStyle = '#333'; ctx.font = 'bold 10px -apple-system,sans-serif';
+      ctx.fillText('EFECTOS', 24, effY);
+      let ex = 24; ctx.font = '12px -apple-system,sans-serif';
+      extra.effects.slice(0, 4).forEach(e => {
+        const ew = ctx.measureText(e).width + 20;
+        ctx.strokeStyle = cfg.color + '55'; ctx.lineWidth = 1;
+        _rrect(ctx, ex, effY + 8, ew, 24, 12); ctx.stroke();
+        ctx.fillStyle = cfg.color + 'cc'; ctx.fillText(e, ex + 10, effY + 24);
+        ex += ew + 8;
+      });
+
+      // Bottom CTA
+      const btmY = H - 50;
+      ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, btmY - 10, W, 60);
+      ctx.fillStyle = '#444'; ctx.font = '13px -apple-system,sans-serif';
+      ctx.fillText('trichai.vercel.app', 24, btmY + 16);
+      ctx.fillStyle = cfg.color; ctx.font = 'bold 13px -apple-system,sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('Analiza la tuya →', W - 24, btmY + 16);
+      ctx.textAlign = 'left';
+
+      resolve(canvas);
+    };
+
+    if (imageSrc) {
+      const img = new Image();
+      img.onload = draw;
+      img.onerror = () => { /* draw without photo */ draw(); };
+      img.src = imageSrc;
+    } else {
+      draw();
+    }
+  });
+}
+
+async function shareResult(result, cfg, extra, imagePreview, onPreview) {
+  if (onPreview) { onPreview(null); }
+  const canvas = await buildShareCardWithImage(result, cfg, extra, imagePreview ? imagePreview : null);
+  const dataUrl = canvas.toDataURL('image/png');
+  if (onPreview) { onPreview(dataUrl); return; }
+
+  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\ntrichai.vercel.app`;
+  return new Promise(resolve => {
+    canvas.toBlob(async blob => {
+      const file = new File([blob], 'trichai.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ title: `TrichAI — ${result.display}`, text, files: [file] }); resolve(); return; } catch {}
+      }
+      if (navigator.share) {
+        try { await navigator.share({ title: `TrichAI — ${result.display}`, text }); resolve(); return; } catch {}
+      }
+      const a = document.createElement('a');
+      a.download = 'trichai-resultado.png'; a.href = dataUrl; a.click();
+      resolve();
+    });
+  });
+}
+
 function loadHistory() {
   try { return JSON.parse(localStorage.getItem('trichai_history') || '[]'); }
   catch { return []; }
@@ -175,6 +456,8 @@ export default function App() {
   const [historyOpen, setHistoryOpen]   = useState(false);
   const [expandedHistory, setExpandedHistory] = useState(null);
   const [copied, setCopied]             = useState(false);
+  const [sharing, setSharing]           = useState(false);
+  const [sharePreview, setSharePreview] = useState(null);
   const inputRef    = useRef();
   const contribRef  = useRef();
   const prevPreview = useRef(null);  // tracks current object URL for revocation
@@ -403,10 +686,21 @@ export default function App() {
               <>
                 <div style={styles.actionRow}>
                   <button style={styles.actionBtn} onClick={copyResult}>
-                    {copied ? '✅ Copiado' : '📋 Copiar resultado'}
+                    {copied ? '✅ Copiado' : '📋 Copiar'}
+                  </button>
+                  <button
+                    style={{...styles.actionBtn, borderColor:'#4CAF5066', color:'#4CAF50'}}
+                    onClick={async () => {
+                      setSharing(true);
+                      await shareResult(result, cfg, extra, preview, setSharePreview);
+                      setSharing(false);
+                    }}
+                    disabled={sharing}
+                  >
+                    {sharing ? '⏳' : '↑ Compartir'}
                   </button>
                   <button style={styles.actionBtn} onClick={reset}>
-                    🔄 Nueva foto
+                    🔄 Nueva
                   </button>
                 </div>
 
@@ -419,6 +713,33 @@ export default function App() {
               </>
             )}
           </>
+        )}
+
+        {/* ── SHARE PREVIEW MODAL ── */}
+        {sharePreview && (
+          <div style={styles.modalOverlay} onClick={() => setSharePreview(null)}>
+            <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+              <p style={styles.modalTitle}>Vista previa</p>
+              <img src={sharePreview} alt="share preview" style={styles.modalImg} />
+              <div style={styles.modalBtns}>
+                <button style={{...styles.btn, marginBottom:0, flex:1}} onClick={async () => {
+                  const res = await fetch(sharePreview);
+                  const blob = await res.blob();
+                  const file = new File([blob], 'trichai.png', { type: 'image/png' });
+                  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\ntrichai.vercel.app`;
+                  if (navigator.share && navigator.canShare?.({ files: [file] })) {
+                    try { await navigator.share({ title: `TrichAI — ${result.display}`, text, files: [file] }); setSharePreview(null); return; } catch {}
+                  }
+                  const a = document.createElement('a');
+                  a.download = 'trichai-resultado.png'; a.href = sharePreview; a.click();
+                  setSharePreview(null);
+                }}>
+                  ↑ Compartir / Descargar
+                </button>
+                <button style={{...styles.actionBtn, flex:0.4}} onClick={() => setSharePreview(null)}>Cerrar</button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ── CONTRIBUTE MODE ── */}
@@ -554,4 +875,10 @@ const styles = {
   historyConf:   { color:'#666', fontSize:12, margin:'0 0 3px' },
   historyDate:   { color:'#444', fontSize:11, margin:0 },
   historyArrow:  { color:'#333', fontSize:22, flexShrink:0 },
+
+  modalOverlay:  { position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:16 },
+  modalBox:      { background:'#111', borderRadius:16, padding:20, width:'100%', maxWidth:420, border:'1px solid #222' },
+  modalTitle:    { color:'#fff', fontSize:16, fontWeight:700, margin:'0 0 14px', textAlign:'center' },
+  modalImg:      { width:'100%', borderRadius:10, marginBottom:14, display:'block' },
+  modalBtns:     { display:'flex', gap:8, alignItems:'center' },
 };
