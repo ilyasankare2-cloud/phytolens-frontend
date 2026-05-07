@@ -67,7 +67,7 @@ function buildShareCardWithImage(result, cfg, extra, imageSrc) {
     const ctx = canvas.getContext('2d');
     ctx.scale(S, S);
 
-    const draw = () => {
+    const draw = (loadedImg) => {
       // Background
       ctx.fillStyle = '#080808'; ctx.fillRect(0, 0, W, H);
 
@@ -78,10 +78,10 @@ function buildShareCardWithImage(result, cfg, extra, imageSrc) {
       ctx.fillStyle = grd; ctx.fillRect(0, 0, W, 480);
 
       // Photo
-      if (imageSrc) {
+      if (loadedImg) {
         ctx.save();
         _rrect(ctx, 0, 0, W, 420, 0); ctx.clip();
-        ctx.drawImage(imageSrc, 0, 0, W, 420);
+        ctx.drawImage(loadedImg, 0, 0, W, 420);
         // gradient overlay bottom of photo
         const fade = ctx.createLinearGradient(0, 250, 0, 420);
         fade.addColorStop(0, 'transparent');
@@ -189,11 +189,12 @@ function buildShareCardWithImage(result, cfg, extra, imageSrc) {
 
     if (imageSrc) {
       const img = new Image();
-      img.onload = draw;
-      img.onerror = () => { /* draw without photo */ draw(); };
+      img.crossOrigin = 'anonymous';
+      img.onload = () => draw(img);
+      img.onerror = () => draw(null);
       img.src = imageSrc;
     } else {
-      draw();
+      draw(null);
     }
   });
 }
