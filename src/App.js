@@ -580,7 +580,7 @@ function AppInner() {
         {mode === 'analyze' && (
           <>
             <div style={styles.dropzone} onClick={() => inputRef.current.click()} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}>
-              {preview
+              {(preview && !result)
                 ? <img src={preview} alt="preview" style={styles.preview} />
                 : <div style={styles.placeholder}>
                     <span style={{fontSize:48}}>📷</span>
