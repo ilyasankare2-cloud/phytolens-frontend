@@ -4,6 +4,38 @@ import { palette } from './shared/theme';
 import { compressImage } from './utils/imageCompress';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+function CookieBanner() {
+  const [visible, setVisible] = useState(() => !localStorage.getItem('trichai_cookie_consent'));
+  if (!visible) return null;
+  const handle = (choice) => {
+    localStorage.setItem('trichai_cookie_consent', choice);
+    if (choice === 'accepted' && window.gtag) {
+      window.gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+    setVisible(false);
+  };
+  return (
+    <div style={cookieStyles.banner}>
+      <p style={cookieStyles.text}>
+        Usamos Google Analytics para mejorar la app. No recopilamos datos personales.{' '}
+        <a href="/terms.html" style={{color: palette.green}}>Términos</a>
+      </p>
+      <div style={cookieStyles.btns}>
+        <button style={cookieStyles.reject} onClick={() => handle('rejected')}>Rechazar</button>
+        <button style={cookieStyles.accept} onClick={() => handle('accepted')}>Aceptar</button>
+      </div>
+    </div>
+  );
+}
+
+const cookieStyles = {
+  banner: { position:'fixed', bottom:0, left:0, right:0, background:'#1a1a1a', borderTop:`1px solid #2a2a2a`, padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, zIndex:1000, flexWrap:'wrap' },
+  text:   { color:'#888', fontSize:13, margin:0, flex:1 },
+  btns:   { display:'flex', gap:8, flexShrink:0 },
+  reject: { background:'transparent', border:'1px solid #333', color:'#666', borderRadius:8, padding:'8px 16px', fontSize:13, cursor:'pointer' },
+  accept: { background:palette.green, border:'none', color:'#000', borderRadius:8, padding:'8px 16px', fontSize:13, fontWeight:600, cursor:'pointer' },
+};
+
 const API = 'https://phytolens-backend-production.up.railway.app';
 
 // ── SHARE CARD (Canvas) ───────────────────────────────────────────────────────
@@ -233,6 +265,9 @@ const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, 
         <div>
           <p style={{...styles.resultLabel, color: cfg.color}}>{result.display}</p>
           <p style={styles.resultConf}>Confianza: {conf.toFixed(1)}%</p>
+          {conf < 70 && (
+            <p style={styles.lowConfWarning}>⚠️ Confianza baja. Este resultado puede ser incorrecto.</p>
+          )}
           <div style={styles.qualityRow}>
             <div style={{...styles.qualityDot, background: conf >= 85 ? palette.green : conf >= 65 ? '#FF9800' : '#f44336'}}/>
             <p style={styles.resultQuality}>Calidad: {result.quality}</p>
@@ -555,6 +590,7 @@ function AppInner() {
             </div>
             <input ref={inputRef} type="file" accept="image/*" style={{display:'none'}} onChange={e => handleFile(e.target.files[0])} />
 
+            <p style={styles.disclaimer}>Herramienta informativa. Los resultados son estimaciones de IA, no sustituyen análisis de laboratorio. Solo mayores de edad donde el cannabis sea legal. <a href="/terms.html" style={{color:palette.green}}>Términos</a></p>
             <button style={{...styles.btn, opacity:(!image||loading)?0.6:1, cursor:(!image||loading)?'not-allowed':'pointer'}} onClick={analyze} disabled={!image||loading}>
               {loading ? <span style={styles.btnLoading}><span style={styles.spinner}/>Analizando con IA…</span> : 'Analizar imagen'}
             </button>
@@ -691,6 +727,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppInner />
+      <CookieBanner />
     </ErrorBoundary>
   );
 }
@@ -711,6 +748,7 @@ const styles = {
   dropzone:      { border:'2px dashed #2a2a2a', borderRadius:12, minHeight:200, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', marginBottom:16 },
   placeholder:   { textAlign:'center', color:'#444' },
   dropText:      { color:'#444', fontSize:14, marginTop:8 },
+  disclaimer:    { color:'#3a3a3a', fontSize:12, lineHeight:1.5, marginBottom:12, textAlign:'center' },
   preview:       { width:'100%', maxHeight:300, objectFit:'cover' },
   btn:           { width:'100%', padding:'14px 0', background:palette.green, color:'#fff', border:'none', borderRadius:10, fontSize:16, fontWeight:600, cursor:'pointer', marginBottom:16 },
   error:         { color:'#f44336', textAlign:'center', fontSize:14, marginBottom:12 },
@@ -724,6 +762,7 @@ const styles = {
   resultHeader:  { display:'flex', gap:16, alignItems:'center', marginBottom:16 },
   resultLabel:   { fontSize:22, fontWeight:700, margin:0 },
   resultConf:    { color:'#aaa', fontSize:14, margin:'4px 0 0' },
+  lowConfWarning:{ color:'#f5a623', fontSize:12, margin:'6px 0 0', background:'#1a1200', border:'1px solid rgba(245,166,35,.2)', borderRadius:6, padding:'4px 8px', display:'inline-block' },
   qualityRow:    { display:'flex', alignItems:'center', gap:6, marginTop:4 },
   qualityDot:    { width:8, height:8, borderRadius:'50%', flexShrink:0 },
   resultQuality: { color:'#aaa', fontSize:13, margin:0 },
