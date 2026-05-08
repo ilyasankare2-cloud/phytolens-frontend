@@ -38,6 +38,17 @@ const cookieStyles = {
 
 const API = 'https://phytolens-backend-production.up.railway.app';
 
+// ── GA EVENTS ─────────────────────────────────────────────────────────────────
+// Fire only if user accepted analytics. window.gtag exists once GA script loads;
+// consent gating is handled at the consent layer in index.html.
+function track(eventName, params = {}) {
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    try { window.gtag('event', eventName, params); } catch {}
+  }
+}
+const SESSION_ANALYSES_KEY = 'trichai_session_analyses';
+const FIRST_ANALYSIS_KEY   = 'trichai_first_analysis_done';
+
 // ── SHARE CARD (Canvas) ───────────────────────────────────────────────────────
 function _rrect(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -172,7 +183,7 @@ function buildShareCardWithImage(result, cfg, extra, imageSrc) {
       const btmY = H - 50;
       ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, btmY - 10, W, 60);
       ctx.fillStyle = '#444'; ctx.font = '13px -apple-system,sans-serif';
-      ctx.fillText('trichai.vercel.app', 24, btmY + 16);
+      ctx.fillText('phytolens-frontend.vercel.app', 24, btmY + 16);
       ctx.fillStyle = cfg.color; ctx.font = 'bold 13px -apple-system,sans-serif';
       ctx.textAlign = 'right';
       ctx.fillText('Analiza la tuya →', W - 24, btmY + 16);
@@ -199,7 +210,7 @@ async function shareResult(result, cfg, extra, imagePreview, onPreview) {
   const dataUrl = canvas.toDataURL('image/png');
   if (onPreview) { onPreview(dataUrl); return; }
 
-  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\ntrichai.vercel.app`;
+  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\nhttps://phytolens-frontend.vercel.app`;
   return new Promise(resolve => {
     canvas.toBlob(async blob => {
       const file = new File([blob], 'trichai.png', { type: 'image/png' });
@@ -369,6 +380,7 @@ function AppInner() {
   const [preview, setPreview]           = useState(null);
   const [result, setResult]             = useState(null);
   const [loading, setLoading]           = useState(false);
+  const [slowLoading, setSlowLoading]   = useState(false);
   const [error, setError]               = useState(null);
   const [mode, setMode]                 = useState('analyze');
   const [contribLabel, setContribLabel] = useState('');
@@ -394,13 +406,27 @@ function AppInner() {
   const handleFile = useCallback(async (file) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setError('El archivo debe ser una imagen.');
+      setError('Formato no soportado. Usa una imagen JPG, PNG o WebP.');
+      return;
+    }
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type)) {
+      setError('Formato no soportado. Usa JPG, PNG o WebP (no HEIC/GIF/SVG).');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError(`La imagen pesa ${(file.size / 1024 / 1024).toFixed(1)}MB. Máximo 10MB — prueba con una foto más pequeña.`);
       return;
     }
     if (prevPreview.current) {
       URL.revokeObjectURL(prevPreview.current);
     }
-    const optimized = await compressImage(file);
+    let optimized;
+    try {
+      optimized = await compressImage(file);
+    } catch {
+      setError('No se pudo procesar la imagen. Puede estar corrupta. Prueba con otra foto.');
+      return;
+    }
     const url = URL.createObjectURL(optimized);
     prevPreview.current = url;
     setImage(optimized);
@@ -414,11 +440,15 @@ function AppInner() {
   const analyze = async () => {
     if (!image) return;
     setLoading(true);
+    setSlowLoading(false);
     setError(null);
+    const controller = new AbortController();
+    const slowId     = setTimeout(() => setSlowLoading(true), 4000);  // 4s warning
+    const timeoutId  = setTimeout(() => controller.abort(), 12000);   // 12s — Railway cold starts can be ~10s
     try {
       const form = new FormData();
       form.append('file', image);
-      const res  = await fetch(`${API}/analyze`, { method: 'POST', body: form });
+      const res  = await fetch(`${API}/analyze`, { method: 'POST', body: form, signal: controller.signal });
       const data = await res.json();
       if (!res.ok) {
         setError(data.detail || 'Error al analizar la imagen.');
@@ -426,6 +456,18 @@ function AppInner() {
       }
       if (data.success) {
         setResult(data.result);
+
+        // Analytics: distinguish first analysis ever vs nth in session
+        const sessionCount = parseInt(sessionStorage.getItem(SESSION_ANALYSES_KEY) || '0', 10) + 1;
+        sessionStorage.setItem(SESSION_ANALYSES_KEY, String(sessionCount));
+        if (!localStorage.getItem(FIRST_ANALYSIS_KEY)) {
+          localStorage.setItem(FIRST_ANALYSIS_KEY, '1');
+          track('first_analysis_completed', { label: data.result.label, confidence: Math.round(data.result.confidence * 100) });
+        }
+        if (sessionCount === 2) {
+          track('second_analysis_same_session', { label: data.result.label });
+        }
+
         const reader = new FileReader();
         reader.onload = (e) => {
           const entry = {
@@ -441,10 +483,17 @@ function AppInner() {
         reader.readAsDataURL(image);
       } else {
         setError('Error al analizar la imagen.');
+        track('error_occurred', { type: 'analyze_no_success' });
       }
-    } catch {
-      setError('No se puede conectar con el servidor.');
+    } catch (err) {
+      setError(err.name === 'AbortError'
+        ? 'El servidor está tardando más de lo normal. Inténtalo de nuevo.'
+        : 'No se puede conectar con el servidor.');
+      track('error_occurred', { type: err.name === 'AbortError' ? 'timeout' : 'network' });
     } finally {
+      clearTimeout(slowId);
+      clearTimeout(timeoutId);
+      setSlowLoading(false);
       setLoading(false);
     }
   };
@@ -465,8 +514,10 @@ function AppInner() {
       const data = await res.json();
       if (!data.success) throw new Error('El servidor rechazó la foto.');
       setContribSent(true);
+      track('photo_contributed', { label: contribLabel });
     } catch (err) {
       setContribError('No se pudo enviar la foto. Inténtalo de nuevo.');
+      track('error_occurred', { type: 'contribute_failed' });
     } finally {
       setContribLoading(false);
     }
@@ -596,6 +647,9 @@ function AppInner() {
             </button>
             {loading && (
               <div style={styles.skeletonCard}>
+                {slowLoading && (
+                  <p style={styles.slowMsg}>⏳ El servidor está despertando, esto puede tardar unos segundos…</p>
+                )}
                 <div className="skeleton" style={{width:120, height:14, marginBottom:10}}/>
                 <div className="skeleton" style={{width:'60%', height:24, marginBottom:8}}/>
                 <div className="skeleton" style={{width:'40%', height:14, marginBottom:18}}/>
@@ -623,6 +677,7 @@ function AppInner() {
                     <button
                       style={{...styles.actionBtn, ...styles.actionBtnPrimary}}
                       onClick={async () => {
+                        track('result_shared', { label: result.label, surface: 'preview_card' });
                         setSharing(true);
                         await shareResult(result, cfg, extra, preview, setSharePreview);
                         setSharing(false);
@@ -661,7 +716,7 @@ function AppInner() {
                   const res = await fetch(sharePreview);
                   const blob = await res.blob();
                   const file = new File([blob], 'trichai.png', { type: 'image/png' });
-                  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\ntrichai.vercel.app`;
+                  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\nhttps://phytolens-frontend.vercel.app`;
                   if (navigator.share && navigator.canShare?.({ files: [file] })) {
                     try { await navigator.share({ title: `TrichAI — ${result.display}`, text, files: [file] }); setSharePreview(null); return; } catch {}
                   }
@@ -723,10 +778,26 @@ function AppInner() {
   );
 }
 
+function AppFooter() {
+  return (
+    <div style={footerStyles.bar}>
+      <a href="mailto:trichaiphy@gmail.com?subject=Feedback%20TrichAI" style={footerStyles.link}>✉️ Feedback</a>
+      <span style={footerStyles.sep}>·</span>
+      <a href="/terms.html" style={footerStyles.link}>Términos</a>
+    </div>
+  );
+}
+const footerStyles = {
+  bar:  { textAlign:'center', padding:'24px 16px 80px', color:'#444', fontSize:13 },
+  link: { color:'#666', textDecoration:'none' },
+  sep:  { margin:'0 10px', color:'#222' },
+};
+
 export default function App() {
   return (
     <ErrorBoundary>
       <AppInner />
+      <AppFooter />
       <CookieBanner />
     </ErrorBoundary>
   );
@@ -851,6 +922,7 @@ const styles = {
   spinner:       { width:14, height:14, borderRadius:'50%', border:'2px solid rgba(0,0,0,0.2)', borderTopColor:'#000', animation:'spin 0.7s linear infinite', display:'inline-block' },
   spinnerSm:     { width:12, height:12, borderRadius:'50%', border:`2px solid ${palette.green}33`, borderTopColor:palette.green, animation:'spin 0.7s linear infinite', display:'inline-block' },
   skeletonCard:  { background:palette.surface, border:`1px solid ${palette.border}`, borderRadius:14, padding:20, marginTop:8 },
+  slowMsg:       { color:'#f5a623', fontSize:12, margin:'0 0 14px', background:'#1a1200', border:'1px solid rgba(245,166,35,0.2)', borderRadius:6, padding:'8px 10px', textAlign:'center' },
 
   // Error box (premium)
   errorBox:      { display:'flex', gap:12, alignItems:'flex-start', background:'rgba(244,67,54,0.08)', border:'1px solid rgba(244,67,54,0.25)', borderRadius:12, padding:'12px 14px', marginBottom:12 },
