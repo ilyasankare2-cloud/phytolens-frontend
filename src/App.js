@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { LABELS, EXTRA_INFO, CONTRIB_LABELS } from './shared/labels';
 import { palette } from './shared/theme';
+import { interpretThc } from './shared/thcInterpretation';
 import { compressImage } from './utils/imageCompress';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -263,10 +264,12 @@ const NotDetectedCard = memo(function NotDetectedCard({ imagePreview, onRetry })
 });
 
 const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, compact = false, onRetry }) {
+  const [thcOpen, setThcOpen] = useState(false);
   if (result.label === 'other') {
     return <NotDetectedCard imagePreview={imagePreview} onRetry={onRetry} />;
   }
   const conf = result.confidence * 100;
+  const thcDetail = interpretThc(result);
   return (
     <div style={{...styles.result, borderColor: cfg.color}}>
       {imagePreview && <img src={imagePreview} alt="preview" style={styles.resultImage} />}
@@ -287,15 +290,46 @@ const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, 
       </div>
 
       <div style={styles.thcRow}>
-        <div style={styles.thcBox}>
+        <div
+          style={{...styles.thcBox, ...(thcDetail ? styles.thcBoxClickable : {}), ...(thcOpen ? {borderColor: cfg.color+'55'} : {})}}
+          onClick={() => thcDetail && setThcOpen(o => !o)}
+          role={thcDetail ? 'button' : undefined}
+          tabIndex={thcDetail ? 0 : undefined}
+          onKeyDown={e => { if (thcDetail && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setThcOpen(o => !o); } }}
+        >
           <p style={styles.thcTitle}>THC típico</p>
           <p style={{...styles.thcValue, color: cfg.color, fontSize: 22, lineHeight: 1.2}}>{result.thc_min}% — {result.thc_max}%</p>
+          {thcDetail && (
+            <p style={styles.thcExpandHint}>{thcOpen ? 'Ocultar detalle ▲' : 'Toca para ver detalle ▼'}</p>
+          )}
         </div>
         <div style={styles.thcBox}>
           <p style={styles.thcTitle}>CBD típico</p>
           <p style={{...styles.thcValue, color: '#aaa', fontSize: 18, paddingTop: 4}}>{extra.cbd}</p>
         </div>
       </div>
+      {thcDetail && (
+        <div style={{...styles.thcDetailWrap, maxHeight: thcOpen ? 600 : 0, opacity: thcOpen ? 1 : 0, marginTop: thcOpen ? 8 : 0, marginBottom: thcOpen ? 14 : 0}}>
+          <div style={{...styles.thcDetailBox, borderColor: cfg.color+'33'}}>
+            {thcDetail.lowConf && (
+              <p style={styles.thcDetailLowConf}>⚠ Confianza baja del modelo. Esta interpretación es orientativa.</p>
+            )}
+            <p style={styles.thcDetailSection}>RASGOS DETECTADOS</p>
+            <ul style={styles.thcDetailList}>
+              {thcDetail.traits.map(t => (
+                <li key={t.key} style={styles.thcDetailItem}>
+                  <span style={styles.thcDetailItemLabel}>{t.label}: </span>
+                  <span style={{...styles.thcDetailItemValue, color: cfg.color}}>{t.value}</span>
+                  {t.sub && t.sub !== '—' && <span style={styles.thcDetailItemSub}> · {t.sub}</span>}
+                </li>
+              ))}
+            </ul>
+            <p style={styles.thcDetailSection}>INTERPRETACIÓN</p>
+            <p style={styles.thcDetailText}>{thcDetail.interpretation}</p>
+            <p style={styles.thcDetailDisclaimer}>⚠ Estimación visual. No sustituye análisis de laboratorio.</p>
+          </div>
+        </div>
+      )}
 
       <p style={styles.description}>{result.description}</p>
 
@@ -884,10 +918,23 @@ const styles = {
   resultQuality: { color:'#aaa', fontSize:13, margin:0 },
 
   thcRow:        { display:'flex', gap:8, marginBottom:16 },
-  thcBox:        { flex:1, background:'#111', borderRadius:8, padding:12, textAlign:'center' },
+  thcBox:        { flex:1, background:'#111', borderRadius:8, padding:12, textAlign:'center', border:'1px solid transparent', transition:'border-color 200ms cubic-bezier(.22,1,.36,1)' },
+  thcBoxClickable:{ cursor:'pointer', userSelect:'none' },
   thcTitle:      { color:'#666', fontSize:12, margin:'0 0 4px' },
   thcValue:      { fontSize:28, fontWeight:700, margin:0 },
   thcRange:      { color:'#444', fontSize:12, margin:'4px 0 0' },
+  thcExpandHint: { color:'#555', fontSize:11, margin:'6px 0 0', letterSpacing:'0.2px' },
+  thcDetailWrap: { overflow:'hidden', transition:'max-height 280ms cubic-bezier(.22,1,.36,1), opacity 280ms cubic-bezier(.22,1,.36,1), margin 280ms cubic-bezier(.22,1,.36,1)' },
+  thcDetailBox:  { background:'#0a0a0a', border:'1px solid', borderRadius:12, padding:'14px 16px' },
+  thcDetailLowConf:{ color:'#f5a623', fontSize:12, margin:'0 0 12px', background:'#1a1200', border:'1px solid rgba(245,166,35,0.2)', borderRadius:6, padding:'6px 10px' },
+  thcDetailSection:{ color:'#555', fontSize:10, fontWeight:700, letterSpacing:'0.8px', margin:'0 0 8px' },
+  thcDetailList: { listStyle:'none', padding:0, margin:'0 0 14px' },
+  thcDetailItem: { color:'#aaa', fontSize:13, margin:'0 0 5px', lineHeight:1.5 },
+  thcDetailItemLabel:{ color:'#888' },
+  thcDetailItemValue:{ fontWeight:700 },
+  thcDetailItemSub:{ color:'#555', fontSize:12 },
+  thcDetailText: { color:'#ccc', fontSize:13, margin:'0 0 14px', lineHeight:1.55 },
+  thcDetailDisclaimer:{ color:'#555', fontSize:11, margin:0, fontStyle:'italic' },
 
   description:   { color:'#888', fontSize:13, marginBottom:12, lineHeight:1.6 },
   sectionTitle:  { color:'#666', fontSize:11, fontWeight:600, margin:'12px 0 8px', textTransform:'uppercase', letterSpacing:0.5 },

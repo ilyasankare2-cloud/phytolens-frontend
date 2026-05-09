@@ -95,6 +95,12 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - **Problema:** En expo-image-picker 17+ está deprecated, hay que usar `mediaTypes: ['images']`.
 - **Plan:** Migrar API.
 
+### TD-015 · Heurísticas de hash derivadas en cliente
+- **Repos:** `phytolens-frontendcd`, `phytolens-app`
+- **Problema:** "Uniformidad" e "indicio de tonos verdes" para hash se calculan en `thcInterpretation.{js,ts}` a partir de `roughness` y `dominant_color`. La regla vive en cliente y está duplicada en web/mobile (mismo problema que TD-005).
+- **Plan:** Mover a `visual_traits.py` cuando se haga el siguiente deploy de backend. Añadir campos `uniformity` y `green_tint` al payload. Ver ADR-0002.
+- **Nota conceptual:** La cobertura de tricomas no aplica a hash (resina prensada no preserva la estructura cristalina). Por eso el módulo de interpretación la ignora explícitamente para `label === 'hash'`.
+
 ---
 
 ## Histórico (resuelto)
