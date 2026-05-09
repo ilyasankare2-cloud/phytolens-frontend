@@ -31,7 +31,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - **Repos:** todos
 - **Problema:** Cero error tracking. Bugs en producción (ej. el `drawImage` con string en vez de Image) llevan minutos diagnosticar a ojo.
 - **Plan:** Sentry free tier (5k events/mes). DSN como env var en Railway/Vercel/EAS.
-- **Estado:** Scaffolding hecho, pendiente DSN del founder.
+- **Estado:** ✅ Resuelto. Un único proyecto Sentry para los 3 surfaces, distinguidos por `tag: platform=web|mobile|landing`. Mobile usa `@sentry/react-native` (init en `_layout.tsx`). Web usa `@sentry/browser` (init en `src/index.js`, expuesto a `window.Sentry` que la `ErrorBoundary` ya consumía). Landing usa el bundle CDN inline. DSN hardcoded (es un identificador público write-only). Backend Railway sin Sentry todavía — bajo prioridad porque los logs de Railway ya cubren errores de servidor.
 
 ---
 
@@ -111,6 +111,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - ✅ TD-001 modelos a R2
 - ✅ TD-002 rate limit a Redis
 - ✅ TD-003 smoke tests reales
+- ✅ TD-004 Sentry en web + mobile + landing
 - ✅ TD-005 labels compartidos (mitigación)
 - ✅ TD-007 image compression (web + mobile)
 - ✅ TD-008 paleta unificada
