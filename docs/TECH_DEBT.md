@@ -19,6 +19,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - **Repo:** `phytolens-backend`
 - **Problema:** `_rate_store: dict = defaultdict(list)` se reinicia en cada deploy y no funciona con múltiples workers. En cuanto Railway escale a 2 workers, el rate limit deja de tener efecto.
 - **Plan:** Usar Upstash Redis (ya conectado para analytics) con `INCR + EXPIRE` por IP/minute.
+- **Estado:** ✅ Resuelto. `check_rate()` usa Redis con pipeline `INCR + EXPIRE` cuando `redis` está disponible. Fallback transparente a in-memory si Redis falla. Multi-worker safe.
 
 ### TD-003 · Tests son teatro
 - **Repo:** `phytolens-frontendcd`
@@ -108,6 +109,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 ## Histórico (resuelto)
 
 - ✅ TD-001 modelos a R2
+- ✅ TD-002 rate limit a Redis
 - ✅ TD-003 smoke tests reales
 - ✅ TD-005 labels compartidos (mitigación)
 - ✅ TD-007 image compression (web + mobile)
