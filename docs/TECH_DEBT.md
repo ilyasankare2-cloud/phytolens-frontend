@@ -11,9 +11,9 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 
 ### TD-001 · Modelos versionados en git
 - **Repo:** `phytolens-backend`
-- **Problema:** `model/phytolens_v1.onnx` (79MB) y `model/phytolens_best.pt` (80MB) están trackeados en git. Cada clone descarga 163MB. Cada deploy de Railway descarga 163MB.
-- **Plan:** Mover a Cloudflare R2 (`models/v{N}.onnx`). `inference.py` los descarga en `app.startup` y cachea en disco. Permite hot-swap sin redeploy.
-- **Bloqueado por:** decisión sobre versionado del modelo.
+- **Problema:** `model/phytolens_v1.onnx` (79MB), `phytolens_v2.onnx` (77MB) y `phytolens_best.pt` (79MB) trackeados en git. 234MB en cada clone/deploy.
+- **Plan:** Mover a Cloudflare R2. `inference.py` descarga en startup y cachea en disco. Permite hot-swap sin redeploy.
+- **Estado:** ✅ Resuelto. Reusa el bucket `trichai-contributions` con prefijo `models/`. Env var `MODEL_KEY` (default `models/phytolens_v2.onnx`) elige el modelo. `git rm --cached` aplicado, `.gitignore` excluye `*.onnx` y `*.pt`. Para deployar nuevo modelo: subir a R2 → cambiar `MODEL_KEY` en Railway → restart. Blobs antiguos siguen en historial git (no se hizo `filter-repo`); clones futuros son slim a partir del commit.
 
 ### TD-002 · Rate limiting in-memory
 - **Repo:** `phytolens-backend`
@@ -107,6 +107,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 
 ## Histórico (resuelto)
 
+- ✅ TD-001 modelos a R2
 - ✅ TD-003 smoke tests reales
 - ✅ TD-005 labels compartidos (mitigación)
 - ✅ TD-007 image compression (web + mobile)
