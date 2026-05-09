@@ -24,7 +24,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - **Repo:** `phytolens-frontendcd`
 - **Problema:** El único test (`App.test.js`) es el default de CRA y **falla** si se ejecuta.
 - **Plan:** Suite de smoke tests reales (home render, result render, history empty state).
-- **Estado:** En progreso.
+- **Estado:** ✅ Resuelto. 4 smoke tests pasan: brand, dropzone, analyze button disabled, tabs.
 
 ### TD-004 · Sin observabilidad
 - **Repos:** todos
@@ -51,8 +51,8 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 ### TD-007 · Sin compresión client-side de imágenes
 - **Repos:** `phytolens-frontendcd`, `phytolens-app`
 - **Problema:** Web sube el archivo original (foto iPhone moderno = 3-5 MB). Inferencia sólo necesita 224×224. Estamos moviendo 20× más bytes de los necesarios.
-- **Plan:** Resize a max 1280px + JPEG 0.85 antes de POST. Móvil ya usa quality 0.8 pero no hace resize.
-- **Estado:** Resuelto en web. Mobile pendiente.
+- **Plan:** Resize a max 1280px + JPEG 0.85 antes de POST.
+- **Estado:** ✅ Resuelto en web (`utils/imageCompress`) y mobile (`shared/compressImage` con `expo-image-manipulator`).
 
 ### TD-008 · Inconsistencia de paleta entre plataformas
 - **Repos:** todos
@@ -73,6 +73,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - **Repo:** `phytolens-app`
 - **Problema:** `package.json` tiene `"name": "phytolens-app"`. La marca dice TrichAI. Sólo es cosmético hasta que se publique en stores.
 - **Plan:** Renombrar antes de submit a Play Store.
+- **Estado:** ✅ Resuelto. `package.json` y `package-lock.json` ahora dicen `"name": "trichai"`. Slug de Expo (`trichai-app`) y `projectId` de EAS sin cambios para no romper builds.
 
 ### TD-011 · No hay error boundaries en web
 - **Repo:** `phytolens-frontendcd`
@@ -94,6 +95,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - **Repo:** `phytolens-app`
 - **Problema:** En expo-image-picker 17+ está deprecated, hay que usar `mediaTypes: ['images']`.
 - **Plan:** Migrar API.
+- **Estado:** ✅ Resuelto.
 
 ### TD-015 · Heurísticas de hash derivadas en cliente
 - **Repos:** `phytolens-frontendcd`, `phytolens-app`
@@ -105,7 +107,10 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 
 ## Histórico (resuelto)
 
-- ✅ TD-008 paleta unificada
-- ✅ TD-011 error boundary
-- ✅ TD-007 image compression web
+- ✅ TD-003 smoke tests reales
 - ✅ TD-005 labels compartidos (mitigación)
+- ✅ TD-007 image compression (web + mobile)
+- ✅ TD-008 paleta unificada
+- ✅ TD-010 rename package mobile a `trichai`
+- ✅ TD-011 error boundary
+- ✅ TD-014 `mediaTypes` array en image-picker
