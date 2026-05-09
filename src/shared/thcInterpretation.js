@@ -61,7 +61,7 @@ export function interpretThc(result) {
     const uniformity = uniformityFromRoughness(v.roughness);
     const green      = hasGreenTint(v.dominant_color);
     const traits = [
-      { key: 'color',   label: 'Color',        value: colorName(v.dominant_color), sub: `RGB ${v.dominant_color.join(', ')}` },
+      { key: 'color',   label: 'Color',        value: colorName(v.dominant_color), sub: '—' },
       { key: 'uniform', label: 'Uniformidad',  value: uniformity, sub: `rugosidad ${v.roughness.toFixed(0)}/100` },
       { key: 'green',   label: 'Tonos verdes', value: green ? 'Presentes' : 'No detectados', sub: green ? 'Posible material vegetal' : '—' },
     ];
@@ -78,7 +78,7 @@ export function interpretThc(result) {
 
   if (result.label === 'plant') {
     const traits = [
-      { key: 'color',  label: 'Color',  value: colorName(v.dominant_color), sub: `RGB ${v.dominant_color.join(', ')}` },
+      { key: 'color',  label: 'Color',  value: colorName(v.dominant_color), sub: '—' },
       { key: 'brillo', label: 'Brillo', value: `${v.brightness.toFixed(0)}%`, sub: '—' },
     ];
     const interpretation = 'El THC en plantas vivas depende de la fase de maduración. Si está en floración avanzada, valores cercanos al máximo del rango.';
