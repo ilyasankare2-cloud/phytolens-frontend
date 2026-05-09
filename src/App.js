@@ -288,13 +288,12 @@ const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, 
 
       <div style={styles.thcRow}>
         <div style={styles.thcBox}>
-          <p style={styles.thcTitle}>THC estimado</p>
-          <p style={{...styles.thcValue, color: cfg.color}}>{result.thc_estimate}%</p>
-          <p style={styles.thcRange}>{result.thc_min}% — {result.thc_max}%</p>
+          <p style={styles.thcTitle}>THC típico</p>
+          <p style={{...styles.thcValue, color: cfg.color, fontSize: 22, lineHeight: 1.2}}>{result.thc_min}% — {result.thc_max}%</p>
         </div>
         <div style={styles.thcBox}>
           <p style={styles.thcTitle}>CBD típico</p>
-          <p style={{...styles.thcValue, color: '#aaa', fontSize: 16, paddingTop: 6}}>{extra.cbd}</p>
+          <p style={{...styles.thcValue, color: '#aaa', fontSize: 18, paddingTop: 4}}>{extra.cbd}</p>
         </div>
       </div>
 
