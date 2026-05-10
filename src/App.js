@@ -264,7 +264,9 @@ const NotDetectedCard = memo(function NotDetectedCard({ imagePreview, onRetry })
 });
 
 const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, compact = false, onRetry }) {
-  const [thcOpen, setThcOpen] = useState(false);
+  const [thcOpen, setThcOpen]   = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [techOpen, setTechOpen] = useState(false);
   if (result.label === 'other') {
     return <NotDetectedCard imagePreview={imagePreview} onRetry={onRetry} />;
   }
@@ -335,72 +337,101 @@ const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, 
 
       {!compact && (
         <>
-          <p style={styles.sectionTitle}>Efectos</p>
-          <div style={styles.badgeRow}>
-            {extra.effects.map(e => <span key={e} style={{...styles.badge, borderColor: cfg.color, color: cfg.color}}>{e}</span>)}
-          </div>
-
-          <p style={styles.sectionTitle}>Aroma</p>
-          <div style={styles.badgeRow}>
-            {extra.aroma.map(a => <span key={a} style={{...styles.badge, borderColor: '#555', color: '#888'}}>{a}</span>)}
-          </div>
-
-          <p style={styles.sectionTitle}>Consumo</p>
-          <div style={styles.badgeRow}>
-            {extra.consumption.map(c => <span key={c} style={{...styles.badge, borderColor: '#444', color: '#666'}}>{c}</span>)}
-          </div>
-
+          {/* Lvl 4 — Aviso obligatorio (siempre visible) */}
           <div style={styles.moderationBox}>
             <p style={styles.moderationTitle}>Moderación</p>
             <p style={styles.moderationText}>{extra.moderation}</p>
           </div>
 
-          <div style={styles.tipBox}>
-            <p style={styles.tipText}>{extra.tip}</p>
+          {/* Lvl 3 — Más detalle (colapsable) */}
+          <button
+            type="button"
+            style={styles.disclosureBtn}
+            onClick={() => setMoreOpen(o => !o)}
+            aria-expanded={moreOpen}
+          >
+            <span style={styles.disclosureLabel}>Más detalle</span>
+            <span style={{...styles.disclosureChevron, transform: moreOpen ? 'rotate(180deg)' : 'rotate(0deg)'}}>▾</span>
+          </button>
+          <div style={{...styles.disclosureWrap, maxHeight: moreOpen ? 1200 : 0, opacity: moreOpen ? 1 : 0, marginBottom: moreOpen ? 8 : 0}}>
+            <div style={styles.disclosureInner}>
+              <p style={styles.sectionTitle}>Efectos</p>
+              <div style={styles.badgeRow}>
+                {extra.effects.map(e => <span key={e} style={{...styles.badge, borderColor: cfg.color, color: cfg.color}}>{e}</span>)}
+              </div>
+
+              <p style={styles.sectionTitle}>Aroma</p>
+              <div style={styles.badgeRow}>
+                {extra.aroma.map(a => <span key={a} style={{...styles.badge, borderColor: '#555', color: '#888'}}>{a}</span>)}
+              </div>
+
+              <p style={styles.sectionTitle}>Consumo</p>
+              <div style={styles.badgeRow}>
+                {extra.consumption.map(c => <span key={c} style={{...styles.badge, borderColor: '#444', color: '#666'}}>{c}</span>)}
+              </div>
+
+              <p style={styles.sectionTitle}>Variedades comunes</p>
+              <div style={styles.badgeRow}>
+                {result.varieties.map(v => <span key={v} style={{...styles.badge, borderColor: cfg.color, color: cfg.color}}>{v}</span>)}
+              </div>
+
+              <div style={styles.tipBox}>
+                <p style={styles.tipText}>{extra.tip}</p>
+              </div>
+            </div>
           </div>
 
-          <p style={styles.sectionTitle}>Variedades comunes</p>
-          <div style={styles.badgeRow}>
-            {result.varieties.map(v => <span key={v} style={{...styles.badge, borderColor: cfg.color, color: cfg.color}}>{v}</span>)}
-          </div>
+          {/* Lvl 5 — Análisis técnico (colapsable) */}
+          <button
+            type="button"
+            style={styles.disclosureBtn}
+            onClick={() => setTechOpen(o => !o)}
+            aria-expanded={techOpen}
+          >
+            <span style={styles.disclosureLabel}>Análisis técnico</span>
+            <span style={{...styles.disclosureChevron, transform: techOpen ? 'rotate(180deg)' : 'rotate(0deg)'}}>▾</span>
+          </button>
+          <div style={{...styles.disclosureWrap, maxHeight: techOpen ? 1000 : 0, opacity: techOpen ? 1 : 0, marginBottom: techOpen ? 8 : 0}}>
+            <div style={styles.disclosureInner}>
+              {result.visual_traits && (
+                <>
+                  <p style={styles.sectionTitle}>Rasgos visuales</p>
+                  <div style={styles.traitsGrid}>
+                    <div style={styles.traitBox}>
+                      <p style={styles.traitLabel}>Tricomas</p>
+                      <p style={styles.traitValue}>{result.visual_traits.trichomes}</p>
+                      <p style={styles.traitSub}>{result.visual_traits.trichome_coverage.toFixed(1)}% cobertura</p>
+                    </div>
+                    <div style={styles.traitBox}>
+                      <p style={styles.traitLabel}>Textura</p>
+                      <p style={styles.traitValue}>{result.visual_traits.texture}</p>
+                      <p style={styles.traitSub}>Rugosidad {result.visual_traits.roughness.toFixed(0)}/100</p>
+                    </div>
+                    <div style={styles.traitBox}>
+                      <p style={styles.traitLabel}>Curación</p>
+                      <p style={styles.traitValue}>{result.visual_traits.cure}</p>
+                      <p style={styles.traitSub}>Brillo {result.visual_traits.brightness.toFixed(0)}%</p>
+                    </div>
+                    <div style={styles.traitBox}>
+                      <p style={styles.traitLabel}>Color base</p>
+                      <div style={{width:24,height:24,borderRadius:'50%',background:`rgb(${result.visual_traits.dominant_color.join(',')})`,margin:'4px auto',border:'1px solid #333'}}/>
+                      <p style={styles.traitSub}>RGB dominante</p>
+                    </div>
+                  </div>
+                </>
+              )}
 
-          {result.visual_traits && (
-            <>
-              <p style={styles.sectionTitle}>Rasgos visuales</p>
-              <div style={styles.traitsGrid}>
-                <div style={styles.traitBox}>
-                  <p style={styles.traitLabel}>Tricomas</p>
-                  <p style={styles.traitValue}>{result.visual_traits.trichomes}</p>
-                  <p style={styles.traitSub}>{result.visual_traits.trichome_coverage.toFixed(1)}% cobertura</p>
-                </div>
-                <div style={styles.traitBox}>
-                  <p style={styles.traitLabel}>Textura</p>
-                  <p style={styles.traitValue}>{result.visual_traits.texture}</p>
-                  <p style={styles.traitSub}>Rugosidad {result.visual_traits.roughness.toFixed(0)}/100</p>
-                </div>
-                <div style={styles.traitBox}>
-                  <p style={styles.traitLabel}>Curación</p>
-                  <p style={styles.traitValue}>{result.visual_traits.cure}</p>
-                  <p style={styles.traitSub}>Brillo {result.visual_traits.brightness.toFixed(0)}%</p>
-                </div>
-                <div style={styles.traitBox}>
-                  <p style={styles.traitLabel}>Color base</p>
-                  <div style={{width:24,height:24,borderRadius:'50%',background:`rgb(${result.visual_traits.dominant_color.join(',')})`,margin:'4px auto',border:'1px solid #333'}}/>
-                  <p style={styles.traitSub}>RGB dominante</p>
-                </div>
+              <p style={styles.sectionTitle}>Probabilidades</p>
+              <div style={styles.bars}>
+                {Object.entries(result.all_probs).map(([key, val]) => (
+                  <div key={key} style={styles.barRow}>
+                    <span style={styles.barLabel}>{LABELS[key].emoji} {LABELS[key].text}</span>
+                    <div style={styles.barBg}><div style={{...styles.barFill, width: `${(val * 100).toFixed(0)}%`, background: LABELS[key].color}}/></div>
+                    <span style={styles.barVal}>{(val * 100).toFixed(1)}%</span>
+                  </div>
+                ))}
               </div>
-            </>
-          )}
-
-          <p style={styles.sectionTitle}>Probabilidades</p>
-          <div style={styles.bars}>
-            {Object.entries(result.all_probs).map(([key, val]) => (
-              <div key={key} style={styles.barRow}>
-                <span style={styles.barLabel}>{LABELS[key].emoji} {LABELS[key].text}</span>
-                <div style={styles.barBg}><div style={{...styles.barFill, width: `${(val * 100).toFixed(0)}%`, background: LABELS[key].color}}/></div>
-                <span style={styles.barVal}>{(val * 100).toFixed(1)}%</span>
-              </div>
-            ))}
+            </div>
           </div>
         </>
       )}
@@ -935,6 +966,12 @@ const styles = {
   thcDetailItemSub:{ color:'#555', fontSize:12 },
   thcDetailText: { color:'#ccc', fontSize:13, margin:'0 0 14px', lineHeight:1.55 },
   thcDetailDisclaimer:{ color:'#555', fontSize:11, margin:0, fontStyle:'italic' },
+
+  disclosureBtn:    { display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', padding:'14px 0', background:'transparent', border:'none', borderTop:'1px solid #1a1a1a', color:'#aaa', fontSize:14, fontWeight:500, cursor:'pointer', textAlign:'left', fontFamily:'inherit', letterSpacing:'-0.1px' },
+  disclosureLabel:  { color:'#ccc' },
+  disclosureChevron:{ color:'#555', fontSize:14, transition:'transform 250ms cubic-bezier(.22,1,.36,1)', display:'inline-block' },
+  disclosureWrap:   { overflow:'hidden', transition:'max-height 250ms cubic-bezier(.22,1,.36,1), opacity 250ms cubic-bezier(.22,1,.36,1), margin 250ms cubic-bezier(.22,1,.36,1)' },
+  disclosureInner:  { paddingTop:4 },
 
   description:   { color:'#888', fontSize:13, marginBottom:12, lineHeight:1.6 },
   sectionTitle:  { color:'#666', fontSize:11, fontWeight:600, margin:'12px 0 8px', textTransform:'uppercase', letterSpacing:0.5 },
