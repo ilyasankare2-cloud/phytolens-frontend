@@ -244,16 +244,16 @@ const NotDetectedCard = memo(function NotDetectedCard({ imagePreview, onRetry })
       <div style={styles.notDetectedHeader}>
         <span style={{fontSize: 40}}>🚫</span>
         <div>
-          <p style={styles.notDetectedTitle}>No detecto cannabis</p>
-          <p style={styles.notDetectedSub}>La foto no parece contener cogollo, hachís ni planta.</p>
+          <p style={styles.notDetectedTitle}>No veo cannabis aquí</p>
+          <p style={styles.notDetectedSub}>No parece haber cogollo, hachís ni planta. Puede que sea una mano, un fondo u otra cosa que el modelo no reconoce.</p>
         </div>
       </div>
       <div style={styles.notDetectedTipsBox}>
-        <p style={styles.notDetectedTipsTitle}>Para mejorar la detección</p>
+        <p style={styles.notDetectedTipsTitle}>Cómo mejorar la foto</p>
         <ul style={styles.notDetectedTipsList}>
-          <li>Acércate al producto, ocupa el centro de la foto</li>
-          <li>Buena iluminación, preferiblemente luz natural</li>
-          <li>Enfoque nítido, sin fondo desordenado</li>
+          <li>Acércate y ocupa el centro</li>
+          <li>Buena luz, preferible natural</li>
+          <li>Enfoque nítido, fondo limpio</li>
         </ul>
       </div>
       {onRetry && (
