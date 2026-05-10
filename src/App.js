@@ -257,7 +257,7 @@ const NotDetectedCard = memo(function NotDetectedCard({ imagePreview, onRetry })
         </ul>
       </div>
       {onRetry && (
-        <button style={{...styles.btn, marginTop:8, marginBottom:0}} onClick={onRetry}>📷 Probar con otra foto</button>
+        <button style={{...styles.btn, marginTop:8, marginBottom:0}} onClick={onRetry}>Probar con otra foto</button>
       )}
     </div>
   );
@@ -335,23 +335,23 @@ const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, 
 
       {!compact && (
         <>
-          <p style={styles.sectionTitle}>⚡ Efectos</p>
+          <p style={styles.sectionTitle}>Efectos</p>
           <div style={styles.badgeRow}>
             {extra.effects.map(e => <span key={e} style={{...styles.badge, borderColor: cfg.color, color: cfg.color}}>{e}</span>)}
           </div>
 
-          <p style={styles.sectionTitle}>👃 Aroma</p>
+          <p style={styles.sectionTitle}>Aroma</p>
           <div style={styles.badgeRow}>
             {extra.aroma.map(a => <span key={a} style={{...styles.badge, borderColor: '#555', color: '#888'}}>{a}</span>)}
           </div>
 
-          <p style={styles.sectionTitle}>🔥 Consumo</p>
+          <p style={styles.sectionTitle}>Consumo</p>
           <div style={styles.badgeRow}>
             {extra.consumption.map(c => <span key={c} style={{...styles.badge, borderColor: '#444', color: '#666'}}>{c}</span>)}
           </div>
 
           <div style={styles.moderationBox}>
-            <p style={styles.moderationTitle}>⚠️ Moderación</p>
+            <p style={styles.moderationTitle}>Moderación</p>
             <p style={styles.moderationText}>{extra.moderation}</p>
           </div>
 
@@ -359,14 +359,14 @@ const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, 
             <p style={styles.tipText}>{extra.tip}</p>
           </div>
 
-          <p style={styles.sectionTitle}>🌱 Variedades comunes</p>
+          <p style={styles.sectionTitle}>Variedades comunes</p>
           <div style={styles.badgeRow}>
             {result.varieties.map(v => <span key={v} style={{...styles.badge, borderColor: cfg.color, color: cfg.color}}>{v}</span>)}
           </div>
 
           {result.visual_traits && (
             <>
-              <p style={styles.sectionTitle}>🔬 Rasgos visuales</p>
+              <p style={styles.sectionTitle}>Rasgos visuales</p>
               <div style={styles.traitsGrid}>
                 <div style={styles.traitBox}>
                   <p style={styles.traitLabel}>Tricomas</p>
@@ -392,7 +392,7 @@ const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, extra, 
             </>
           )}
 
-          <p style={styles.sectionTitle}>📊 Análisis completo</p>
+          <p style={styles.sectionTitle}>Probabilidades</p>
           <div style={styles.bars}>
             {Object.entries(result.all_probs).map(([key, val]) => (
               <div key={key} style={styles.barRow}>
