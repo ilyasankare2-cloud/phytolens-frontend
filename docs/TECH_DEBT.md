@@ -170,6 +170,39 @@ Hallazgos abiertos de la auditoría completa sobre los 3 repos. Top-3 ya cerrado
 - **Problema:** Fotos subidas a `/contribute` pueden traer GPS en EXIF. R2 las guarda para siempre. Si Europa: posible problema GDPR.
 - **Plan:** En `save_contribution`, re-encode con Pillow para descartar EXIF antes de subir. Lifecycle rule en R2 (auto-delete 1y) — ya listado en TD-012.
 
+### SEC-16 · Faltan headers de seguridad modernos — 🟠 medio
+- **Repos:** `trichai-frontend`, `trichai-landing`
+- **Problema:** `vercel.json` del frontend tenía 6 headers básicos pero faltaban HSTS, COOP, CORP. El landing no tenía `vercel.json` en absoluto, así que no aplicaba ningún header.
+- **Estado:** ✅ Resuelto. Frontend amplía a 9 headers (incluido HSTS con preload, COOP same-origin, CORP same-origin). CSP corregido para permitir Google Fonts y Sentry. Landing tiene `vercel.json` nuevo con el conjunto base sin CSP (CSP se añadirá cuando se inventaríe bien lo que carga la página).
+
+### SEC-17 · Sin escaneo automático de secretos en CI — 🟠 medio
+- **Repos:** todos
+- **Problema:** Si en el futuro alguien committea un `.env` o un token por error, tardas días en detectarlo a ojo.
+- **Plan:** GitHub secret scanning se activa automáticamente para repos públicos. Para repos privados o capa extra: añadir `gitleaks` como GitHub Action. Pendiente: el usuario debe verificar en Settings → Security & analysis que "Secret scanning" y "Push protection" están on.
+
+### SEC-18 · Sin `SECURITY.md` ni canal de disclosure — 🟡 bajo
+- **Repos:** todos
+- **Estado:** ✅ Resuelto. `SECURITY.md` en los 4 repos con email `trichaiphy@gmail.com` y SLA de 5 días laborables.
+
+### SEC-19 · Sin escaneo de CVEs en deps de backend — 🟡 bajo
+- **Repo:** `trichai-backend`
+- **Estado:** ✅ Resuelto. CI job `audit` corre `pip-audit` en cada push y PR (informational, no bloquea).
+
+### SEC-20 · Sin CI ni gates de calidad antes de deploy — 🟠 medio
+- **Repos:** todos
+- **Problema:** Cada `git push origin main` desplegaba a producción sin tests, lint, type-check ni audit. Cualquiera con write access podía meter cualquier cosa.
+- **Estado:** ✅ Resuelto parcialmente. CI workflows en frontend (test + build + npm audit), backend (pytest + pip-audit), mobile (tsc + lint + npm audit). CodeQL SAST semanal en los 3. Faltaría: branch protection rules en GitHub para que main solo acepte commits que pasen CI — el usuario debe activarlo en Settings → Branches.
+
+### SEC-21 · 2FA en GitHub sin verificar — 🟠 medio
+- **Repo:** N/A (cuenta GitHub `ilyasankare2-cloud`)
+- **Problema:** Sin 2FA, el producto entero depende de una contraseña. Una filtración compromete los 4 repos y los deploys (Vercel/Railway/EAS usan la cuenta GitHub para auth).
+- **Plan:** Pendiente acción manual del usuario. Settings → Password and authentication → Two-factor authentication. Recomendado: passkey o app autenticadora (no SMS).
+
+### SEC-22 · Sin estrategia de backup para R2 — 🟡 bajo
+- **Repo:** `trichai-backend`
+- **Problema:** Las contribuciones en R2 son el único activo de datos futuro (entrenamiento). Si Cloudflare suspende la cuenta o pierde la región, se pierde todo.
+- **Plan:** Script periódico que sincronice R2 a otro proveedor (B2, S3 Glacier) o a disco local. Bajo riesgo hoy (volumen pequeño) pero crítico el día que tengas dataset valioso.
+
 ---
 
 ## Histórico (resuelto)
@@ -190,3 +223,7 @@ Hallazgos abiertos de la auditoría completa sobre los 3 repos. Top-3 ya cerrado
 - ✅ SEC-02 stats fail-closed + constant-time compare (backend)
 - ✅ SEC-07 decompression-bomb cap en Pillow (backend)
 - ✅ SEC-09 `hmac.compare_digest` en stats key (incluido en SEC-02)
+- ✅ SEC-16 HSTS + COOP + CORP en vercel.json (frontend + landing)
+- ✅ SEC-18 SECURITY.md en los 4 repos
+- ✅ SEC-19 pip-audit en CI del backend
+- ✅ SEC-20 CI workflows + CodeQL en los 3 repos con código
