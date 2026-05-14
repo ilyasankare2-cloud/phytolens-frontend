@@ -107,6 +107,71 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 
 ---
 
+## 🛡️ SEGURIDAD (auditoría 2026-05-14)
+
+Hallazgos abiertos de la auditoría completa sobre los 3 repos. Top-3 ya cerrados en commit `1143ed2` del backend (CORS allowlist, stats fail-closed, decompression-bomb cap).
+
+### SEC-03 · 28 CVEs en deps de frontend (16 high) — 🟠 medio
+- **Repo:** `trichai-frontend`
+- **Problema:** `react-scripts@5.0.1` arrastra `@svgr/webpack`, `@babel/plugin-transform-modules-systemjs` con CVEs altos. Sólo afectan al build (no van al bundle de producción), pero `npm audit fix --force` rompe el build porque exige downgrade major.
+- **Plan:** Migrar de Create React App a Vite. CRA está abandonado desde 2023. Mientras tanto, aceptar el riesgo (build-time only).
+
+### SEC-04 · Rate-limit bypass vía `X-Forwarded-For` — 🟠 medio
+- **Repo:** `trichai-backend`
+- **Problema:** `_get_ip()` confía en el primer valor de `X-Forwarded-For`, que el cliente puede inyectar para saltarse las 20 req/min rotando IPs falsas.
+- **Plan:** Identificar qué header pone Railway para la client IP real (revisar docs Railway). Si no, usar el **último** valor del XFF (más cercano a la infra), no el primero.
+
+### SEC-05 · CSP con `'unsafe-inline'` en script-src — 🟠 medio
+- **Repo:** `trichai-frontend`
+- **Problema:** `vercel.json` lleva `script-src 'self' 'unsafe-inline' ...`. Cualquier XSS reflejado podría ejecutar scripts inline. Aceptable hoy porque el bootstrap GA en `public/index.html` es inline.
+- **Plan:** Mover bootstrap GA a `public/gtag-init.js` y quitar `'unsafe-inline'` de script-src. `'unsafe-inline'` en style-src se queda (la app usa estilos inline en todas partes).
+
+### SEC-06 · CSP probablemente bloquea Google Fonts — 🟠 medio
+- **Repo:** `trichai-frontend`
+- **Problema:** CSP declara `font-src 'self'` y `style-src 'self' 'unsafe-inline'` pero `index.html` carga `fonts.googleapis.com` + `fonts.gstatic.com`. La consola debería estar mostrando violaciones y los fonts cayendo a `-apple-system`.
+- **Plan:** Añadir `https://fonts.googleapis.com` a `style-src` y `https://fonts.gstatic.com` a `font-src`. Alternativa: self-host Inter (elimina dependencia externa).
+
+### SEC-08 · Sentry session replay al 10% en mobile — 🟠 medio (privacidad)
+- **Repo:** `trichai-app`
+- **Problema:** `_layout.tsx` tiene `replaysSessionSampleRate: 0.1`, sube screenshots a Sentry sin trigger de error. La app muestra fotos personales del usuario (cannabis, mano, fondos privados) que pueden quedar en un tercero.
+- **Plan:** Bajar a `0` (mismo patrón que web). Activar `maskAllImages: true` en `mobileReplayIntegration()`.
+
+### SEC-09 · Comparación de `STATS_API_KEY` no constant-time — 🟡 bajo
+- **Repo:** `trichai-backend`
+- **Estado:** ✅ Resuelto en commit `1143ed2` (junto con SEC-02). Ahora usa `hmac.compare_digest`.
+
+### SEC-10 · `enableLogs: true` en Sentry mobile — 🟡 bajo
+- **Repo:** `trichai-app`
+- **Problema:** Envía `console.log` a Sentry. Si en futuro alguien hace `console.log(result)` para debug, esos datos salen del dispositivo.
+- **Plan:** `enableLogs: false` salvo en dev (`__DEV__`).
+
+### SEC-11 · Historial guardado con imagen base64 sin cifrar — 🟡 bajo
+- **Repos:** `trichai-frontend`, `trichai-app`
+- **Problema:** Web localStorage y mobile AsyncStorage guardan hasta 50 entries con `imageData: <base64>` sin cifrar. XSS o root al dispositivo accede a todo.
+- **Plan:** Cifrar `imageData` con clave en `expo-secure-store` (mobile). En web considerar opt-in.
+
+### SEC-12 · Logs filtran exception de Redis con URL — 🟡 bajo
+- **Repo:** `trichai-backend`
+- **Problema:** `main.py` imprime `{e}` directamente en errores de Redis. La excepción puede incluir la URL de Upstash con token.
+- **Plan:** `print(f"[rate] Redis error: {type(e).__name__}")` sin interpolar `{e}`.
+
+### SEC-13 · `/health` filtra fingerprint del stack — 🟡 bajo
+- **Repo:** `trichai-backend`
+- **Problema:** Devuelve `model`, `storage`, `analytics`. Ayuda a perfilar la infra antes de buscar exploits.
+- **Plan:** Endpoint público con solo `{"status": "ok"}`. Versión detallada detrás de `require_stats_key`.
+
+### SEC-14 · Validación de content-type confía en el cliente — 🟡 bajo
+- **Repo:** `trichai-backend`
+- **Problema:** Se valida `file.content_type` antes que magic bytes. El cliente puede mentir. La magic-byte check después sí filtra, así que es defensa redundante pero da falsa sensación.
+- **Plan:** Quitar el primer check de content_type — `validate_image_magic` ya es suficiente.
+
+### SEC-15 · Imágenes contribuidas sin strip EXIF + retención indefinida — 🟡 bajo
+- **Repos:** `trichai-backend` (relacionado con TD-012)
+- **Problema:** Fotos subidas a `/contribute` pueden traer GPS en EXIF. R2 las guarda para siempre. Si Europa: posible problema GDPR.
+- **Plan:** En `save_contribution`, re-encode con Pillow para descartar EXIF antes de subir. Lifecycle rule en R2 (auto-delete 1y) — ya listado en TD-012.
+
+---
+
 ## Histórico (resuelto)
 
 - ✅ TD-001 modelos a R2
@@ -121,3 +186,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - ✅ TD-014 `mediaTypes` array en image-picker
 - ✅ TD-006 memoización + tokens de palette en styles
 - ✅ TD-015 `uniformity` + `green_tint` migrados al backend (cliente con fallback)
+- ✅ SEC-01 CORS allowlist (backend)
+- ✅ SEC-02 stats fail-closed + constant-time compare (backend)
+- ✅ SEC-07 decompression-bomb cap en Pillow (backend)
+- ✅ SEC-09 `hmac.compare_digest` en stats key (incluido en SEC-02)
