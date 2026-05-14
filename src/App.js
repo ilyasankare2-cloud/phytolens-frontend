@@ -920,10 +920,10 @@ const styles = {
   header:        { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 },
   title:         { color:'#fff', fontSize:28, fontWeight:700, margin:0 },
   subtitle:      { color:'#555', fontSize:14, marginTop:4, marginBottom:0 },
-  historyBtn:    { background:'#111', border:'1px solid #222', color:'#666', borderRadius:8, padding:'8px 12px', fontSize:13, cursor:'pointer', flexShrink:0 },
+  historyBtn:    { background:palette.card, border:`1px solid ${palette.border}`, color:palette.muted, borderRadius:8, padding:'8px 12px', fontSize:13, cursor:'pointer', flexShrink:0 },
 
   tabs:          { display:'flex', gap:8, marginBottom:24 },
-  tab:           { flex:1, padding:'10px 0', background:'#111', color:'#555', border:'1px solid #222', borderRadius:8, fontSize:14, cursor:'pointer', fontWeight:500 },
+  tab:           { flex:1, padding:'10px 0', background:palette.card, color:palette.muted, border:`1px solid ${palette.border}`, borderRadius:8, fontSize:14, cursor:'pointer', fontWeight:500 },
   tabActive:     { background:palette.green, color:'#000', border:`1px solid ${palette.green}`, fontWeight:700 },
 
   dropzone:      { border:'2px dashed #2a2a2a', borderRadius:12, minHeight:200, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', overflow:'hidden', marginBottom:16 },
@@ -949,14 +949,14 @@ const styles = {
   resultQuality: { color:'#aaa', fontSize:13, margin:0 },
 
   thcRow:        { display:'flex', gap:8, marginBottom:16 },
-  thcBox:        { flex:1, background:'#111', borderRadius:8, padding:12, textAlign:'center', border:'1px solid transparent', transition:'border-color 200ms cubic-bezier(.22,1,.36,1)' },
+  thcBox:        { flex:1, background:palette.card, borderRadius:8, padding:12, textAlign:'center', border:'1px solid transparent', transition:'border-color 200ms cubic-bezier(.22,1,.36,1)' },
   thcBoxClickable:{ cursor:'pointer', userSelect:'none' },
   thcTitle:      { color:'#666', fontSize:12, margin:'0 0 4px' },
   thcValue:      { fontSize:28, fontWeight:700, margin:0 },
   thcRange:      { color:'#444', fontSize:12, margin:'4px 0 0' },
   thcExpandHint: { color:'#555', fontSize:11, margin:'6px 0 0', letterSpacing:'0.2px' },
   thcDetailWrap: { overflow:'hidden', transition:'max-height 280ms cubic-bezier(.22,1,.36,1), opacity 280ms cubic-bezier(.22,1,.36,1), margin 280ms cubic-bezier(.22,1,.36,1)' },
-  thcDetailBox:  { background:'#0a0a0a', border:'1px solid', borderRadius:12, padding:'14px 16px' },
+  thcDetailBox:  { background:palette.surface, border:'1px solid', borderRadius:12, padding:'14px 16px' },
   thcDetailLowConf:{ color:'#f5a623', fontSize:12, margin:'0 0 12px', background:'#1a1200', border:'1px solid rgba(245,166,35,0.2)', borderRadius:6, padding:'6px 10px' },
   thcDetailSection:{ color:'#555', fontSize:10, fontWeight:700, letterSpacing:'0.8px', margin:'0 0 8px' },
   thcDetailList: { listStyle:'none', padding:0, margin:'0 0 14px' },
@@ -978,7 +978,7 @@ const styles = {
   badgeRow:      { display:'flex', flexWrap:'wrap', gap:6, marginBottom:8 },
   badge:         { border:'1px solid', borderRadius:20, padding:'3px 10px', fontSize:12 },
 
-  moderationBox: { background:'#1a0f00', borderRadius:10, padding:12, marginTop:8, marginBottom:8, border:'1px solid #FF9800' },
+  moderationBox: { background:palette.warnBg, borderRadius:10, padding:12, marginTop:8, marginBottom:8, border:`1px solid ${palette.warn}` },
   moderationTitle:{ color:'#FF9800', fontSize:12, fontWeight:700, margin:'0 0 4px' },
   moderationText:{ color:'#aaa', fontSize:13, margin:0, lineHeight:1.5 },
 
@@ -986,7 +986,7 @@ const styles = {
   tipText:       { color:'#8BC34A', fontSize:13, margin:0, lineHeight:1.5 },
 
   traitsGrid:    { display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 },
-  traitBox:      { background:'#111', borderRadius:10, padding:12, textAlign:'center' },
+  traitBox:      { background:palette.card, borderRadius:10, padding:12, textAlign:'center' },
   traitLabel:    { color:'#555', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:0.5, margin:'0 0 4px' },
   traitValue:    { color:'#ddd', fontSize:13, fontWeight:700, margin:'0 0 3px' },
   traitSub:      { color:'#444', fontSize:11, margin:0 },
@@ -1002,12 +1002,12 @@ const styles = {
   contributeInviteText:{ color:'#555', fontSize:13, margin:'0 0 8px' },
   contributeInviteBtn: { background:'none', border:'1px solid #333', color:'#888', borderRadius:8, padding:'8px 16px', fontSize:13, cursor:'pointer' },
 
-  contributeInfo:     { background:'#111', borderRadius:8, padding:12, marginBottom:16 },
+  contributeInfo:     { background:palette.card, borderRadius:8, padding:12, marginBottom:16 },
   contributeInfoText: { color:'#666', fontSize:13, margin:0, textAlign:'center', lineHeight:1.5 },
   labelTitle:         { color:'#666', fontSize:13, marginBottom:8 },
   labelGrid:          { display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 },
-  labelBtn:           { padding:'10px 8px', background:'#111', border:'1px solid #222', borderRadius:8, color:'#555', fontSize:13, cursor:'pointer', textAlign:'center' },
-  labelBtnActive:     { background:'#111', fontWeight:600 },
+  labelBtn:           { padding:'10px 8px', background:palette.card, border:`1px solid ${palette.border}`, borderRadius:8, color:palette.muted, fontSize:13, cursor:'pointer', textAlign:'center' },
+  labelBtnActive:     { background:palette.card, fontWeight:600 },
 
   successBox:    { textAlign:'center', padding:'24px 0' },
   successTitle:  { color:'#fff', fontSize:20, fontWeight:700, margin:'12px 0 4px' },

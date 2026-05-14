@@ -47,7 +47,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - **Repo:** `phytolens-frontendcd`
 - **Problema:** Cada keystroke dispara re-render del modal share, result card y historial. Funciona porque la app es pequeña, deja de funcionar al añadir features.
 - **Plan:** Component splitting + React.memo + useCallback en handlers críticos.
-- **Estado:** En progreso (memoization en handlers principales).
+- **Estado:** ✅ Resuelto. `ResultCard` y `NotDetectedCard` con `memo`. `handleFile` con `useCallback`. Hex codes hardcodeados en `styles` migrados a tokens de `palette` (`#111`→`palette.card`, `#0a0a0a`→`palette.surface`, `#1a0f00`→`palette.warnBg`, etc.). Grises de texto intermedios (#555, #888, #aaa) sin equivalente en palette — se dejan como están.
 
 ### TD-007 · Sin compresión client-side de imágenes
 - **Repos:** `phytolens-frontendcd`, `phytolens-app`
@@ -102,6 +102,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - **Repos:** `phytolens-frontendcd`, `phytolens-app`
 - **Problema:** "Uniformidad" e "indicio de tonos verdes" para hash se calculan en `thcInterpretation.{js,ts}` a partir de `roughness` y `dominant_color`. La regla vive en cliente y está duplicada en web/mobile (mismo problema que TD-005).
 - **Plan:** Mover a `visual_traits.py` cuando se haga el siguiente deploy de backend. Añadir campos `uniformity` y `green_tint` al payload. Ver ADR-0002.
+- **Estado:** ✅ Resuelto. `visual_traits.py` (backend) ahora emite `uniformity` y `green_tint` con la misma regla que tenían los clientes. Web y mobile usan `v.uniformity ?? uniformityFromRoughness(...)` y `v.green_tint ?? hasGreenTint(...)` — toman lo del backend si llega, si no caen al cálculo local. Las heurísticas client-side quedan como fallback defensivo (clientes viejos contra backends nuevos no rompen, y viceversa) y pueden retirarse en una limpieza futura cuando todos los clientes activos consuman backend ≥ commit con `uniformity`.
 - **Nota conceptual:** La cobertura de tricomas no aplica a hash (resina prensada no preserva la estructura cristalina). Por eso el módulo de interpretación la ignora explícitamente para `label === 'hash'`.
 
 ---
@@ -118,3 +119,5 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - ✅ TD-010 rename package mobile a `trichai`
 - ✅ TD-011 error boundary
 - ✅ TD-014 `mediaTypes` array en image-picker
+- ✅ TD-006 memoización + tokens de palette en styles
+- ✅ TD-015 `uniformity` + `green_tint` migrados al backend (cliente con fallback)

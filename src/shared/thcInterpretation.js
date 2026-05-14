@@ -58,8 +58,9 @@ export function interpretThc(result) {
 
   if (result.label === 'hash') {
     // Trichomes deliberately ignored — they don't apply to pressed resin.
-    const uniformity = uniformityFromRoughness(v.roughness);
-    const green      = hasGreenTint(v.dominant_color);
+    // Use backend-computed fields when available (TD-015); fall back to client heuristics.
+    const uniformity = v.uniformity ?? uniformityFromRoughness(v.roughness);
+    const green      = v.green_tint ?? hasGreenTint(v.dominant_color);
     const traits = [
       { key: 'color',   label: 'Color',        value: colorName(v.dominant_color), sub: '—' },
       { key: 'uniform', label: 'Uniformidad',  value: uniformity, sub: `rugosidad ${v.roughness.toFixed(0)}/100` },
