@@ -122,7 +122,7 @@ function buildShareCardWithImage(result, cfg, extra, imageSrc) {
       const btmY = H - 50;
       ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, btmY - 10, W, 60);
       ctx.fillStyle = '#444'; ctx.font = '13px -apple-system,sans-serif';
-      ctx.fillText('phytolens-frontend.vercel.app', 24, btmY + 16);
+      ctx.fillText('trichai.xyz', 24, btmY + 16);
       ctx.fillStyle = cfg.color; ctx.font = 'bold 13px -apple-system,sans-serif';
       ctx.textAlign = 'right';
       ctx.fillText('Analiza la tuya →', W - 24, btmY + 16);
@@ -149,7 +149,7 @@ export async function shareResult(result, cfg, extra, imagePreview, onPreview) {
   const dataUrl = canvas.toDataURL('image/png');
   if (onPreview) { onPreview(dataUrl); return; }
 
-  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\nhttps://phytolens-frontend.vercel.app`;
+  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\nhttps://trichai.xyz`;
   return new Promise(resolve => {
     canvas.toBlob(async blob => {
       const file = new File([blob], 'trichai.png', { type: 'image/png' });

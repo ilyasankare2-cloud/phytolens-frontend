@@ -5,7 +5,7 @@ Identificador de cannabis con IA. Sube una foto y obtén la categoría, THC esti
 [![Vercel](https://img.shields.io/badge/desplegado-Vercel-black)](https://vercel.com)
 [![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev)
 
-**[trichai.vercel.app](https://trichai.vercel.app)**
+**[trichai.xyz](https://trichai.xyz)**
 
 ## Stack
 

@@ -293,7 +293,7 @@ function AppInner() {
                   const res = await fetch(sharePreview);
                   const blob = await res.blob();
                   const file = new File([blob], 'trichai.png', { type: 'image/png' });
-                  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\nhttps://phytolens-frontend.vercel.app`;
+                  const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\nhttps://trichai.xyz`;
                   if (navigator.share && navigator.canShare?.({ files: [file] })) {
                     try { await navigator.share({ title: `TrichAI — ${result.display}`, text, files: [file] }); setSharePreview(null); return; } catch {}
                   }
