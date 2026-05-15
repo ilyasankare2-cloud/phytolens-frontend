@@ -47,7 +47,7 @@ Cada item tiene severidad (🔴 alto, 🟡 medio, 🟢 bajo), repo afectado y un
 - **Repo:** `phytolens-frontendcd`
 - **Problema:** Cada keystroke dispara re-render del modal share, result card y historial. Funciona porque la app es pequeña, deja de funcionar al añadir features.
 - **Plan:** Component splitting + React.memo + useCallback en handlers críticos.
-- **Estado:** ✅ Resuelto. `ResultCard` y `NotDetectedCard` con `memo`. `handleFile` con `useCallback`. Hex codes hardcodeados en `styles` migrados a tokens de `palette` (`#111`→`palette.card`, `#0a0a0a`→`palette.surface`, `#1a0f00`→`palette.warnBg`, etc.). Grises de texto intermedios (#555, #888, #aaa) sin equivalente en palette — se dejan como están.
+- **Estado:** ✅ Resuelto (nivel 2). `App.js` partido de 1068 → 428 líneas. Extraídos: `components/CookieBanner.js`, `AppFooter.js` (incl. FeedbackModal), `NotDetectedCard.js`, `ResultCard.js`, `HistoryView.js`, `utils/historyStorage.js`, `utils/shareCard.js`. Componentes ya memoizados (`ResultCard`, `NotDetectedCard`). Hex codes hardcodeados migrados a tokens `palette`. Grises de texto intermedios (#555, #888, #aaa) sin equivalente en palette — se dejan.
 
 ### TD-007 · Sin compresión client-side de imágenes
 - **Repos:** `phytolens-frontendcd`, `phytolens-app`
