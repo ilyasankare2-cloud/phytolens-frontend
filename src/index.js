@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import * as Sentry from '@sentry/browser';
 import App from './App';
+import './index.css';
 
 // TD-004: error tracking. Same Sentry project as mobile, distinguished by
 // `platform` tag. DSN is a public identifier (write-only), safe to hardcode.

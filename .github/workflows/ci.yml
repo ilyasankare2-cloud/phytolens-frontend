@@ -26,14 +26,10 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test -- --watchAll=false --passWithNoTests
-        env:
-          CI: true
+        run: npm test
 
       - name: Build
         run: npm run build
-        env:
-          CI: false  # CRA treats warnings as errors when CI=true
 
   audit:
     name: Security audit
