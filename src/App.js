@@ -9,6 +9,7 @@ import { ResultCard } from './components/ResultCard';
 import { HistoryView } from './components/HistoryView';
 import { CookieBanner } from './components/CookieBanner';
 import { AppFooter } from './components/AppFooter';
+import { FeedbackPrompt } from './components/FeedbackPrompt';
 
 const API = 'https://phytolens-backend-production.up.railway.app';
 
@@ -273,10 +274,7 @@ function AppInner() {
                 <ResultCard result={result} imagePreview={preview} cfg={cfg} extra={extra} onRetry={reset} />
 
                 {result.label !== 'other' && (
-                  <div style={s.contributeInvite}>
-                    <p style={s.contributeInviteText}>¿El resultado no es correcto?</p>
-                    <button style={s.contributeInviteBtn} onClick={() => setMode('contribute')}>Corrígelo y mejora la IA →</button>
-                  </div>
+                  <FeedbackPrompt image={image} result={result} onTrack={track} />
                 )}
               </>
             )}
