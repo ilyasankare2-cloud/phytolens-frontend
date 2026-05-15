@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Mail, Check } from 'lucide-react';
 import { palette } from '../shared/theme';
 
 const FEEDBACK_EMAIL = 'trichaiphy@gmail.com';
@@ -16,11 +17,20 @@ function FeedbackModal({ onClose }) {
   return (
     <div style={feedback.overlay} onClick={onClose}>
       <div style={feedback.box} onClick={e => e.stopPropagation()}>
-        <p style={feedback.title}>✉️ Mándanos feedback</p>
+        <p style={feedback.title}>
+          <Mail size={16} strokeWidth={1.8} style={{display:'inline-block', verticalAlign:'-3px', marginRight:8}} />
+          Mándanos feedback
+        </p>
         <p style={feedback.sub}>Bugs, sugerencias o lo que sea — leemos todo.</p>
         <div style={feedback.emailRow}>
           <span style={feedback.emailText}>{FEEDBACK_EMAIL}</span>
-          <button style={feedback.copyBtn} onClick={copy}>{copied ? '✓ Copiado' : 'Copiar'}</button>
+          <button style={feedback.copyBtn} onClick={copy}>
+            {copied ? (
+              <span style={{display:'inline-flex', alignItems:'center', gap:4}}>
+                <Check size={12} strokeWidth={3} />Copiado
+              </span>
+            ) : 'Copiar'}
+          </button>
         </div>
         <a href={GMAIL_COMPOSE} target="_blank" rel="noreferrer" style={feedback.gmailBtn}>Abrir en Gmail</a>
         <a href={`mailto:${FEEDBACK_EMAIL}?subject=Feedback%20TrichAI`} style={feedback.mailBtn}>Abrir cliente de correo</a>
@@ -35,7 +45,10 @@ export function AppFooter() {
   return (
     <>
       <div style={bar.wrap}>
-        <button style={bar.linkBtn} onClick={() => setOpen(true)}>✉️ Feedback</button>
+        <button style={bar.linkBtn} onClick={() => setOpen(true)}>
+          <Mail size={13} strokeWidth={1.8} style={{display:'inline-block', verticalAlign:'-2px', marginRight:6}} />
+          Feedback
+        </button>
         <span style={bar.sep}>·</span>
         <a href="/terms.html" style={bar.link}>Términos</a>
       </div>

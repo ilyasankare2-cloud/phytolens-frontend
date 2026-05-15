@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { Ban } from 'lucide-react';
 import { palette } from '../shared/theme';
 
 export const NotDetectedCard = memo(function NotDetectedCard({ imagePreview, onRetry }) {
@@ -6,7 +7,7 @@ export const NotDetectedCard = memo(function NotDetectedCard({ imagePreview, onR
     <div style={{...s.result, borderColor: palette.border}}>
       {imagePreview && <img src={imagePreview} alt="preview" style={s.resultImage} />}
       <div style={s.header}>
-        <span style={{fontSize: 40}}>🚫</span>
+        <Ban size={44} strokeWidth={1.5} color={palette.muted} style={{flexShrink:0}} />
         <div>
           <p style={s.title}>No veo cannabis aquí</p>
           <p style={s.sub}>No parece haber cogollo, hachís ni planta. Puede que sea una mano, un fondo u otra cosa que el modelo no reconoce.</p>

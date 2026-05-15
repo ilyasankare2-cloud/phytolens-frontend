@@ -1,4 +1,5 @@
 import { memo, useState } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { LABELS } from '../shared/labels';
 import { palette } from '../shared/theme';
 import { interpretThc } from '../shared/thcInterpretation';
@@ -23,7 +24,10 @@ export const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, 
           <p style={{...s.resultLabel, color: cfg.color}}>{result.display}</p>
           <p style={s.resultConf}>Confianza: {conf.toFixed(1)}%</p>
           {conf < 70 && (
-            <p style={s.lowConfWarning}>⚠️ Confianza baja. Este resultado puede ser incorrecto.</p>
+            <div style={s.lowConfWarning}>
+              <AlertCircle size={13} strokeWidth={2.5} style={{flexShrink:0}} />
+              <span>Confianza baja. Este resultado puede ser incorrecto.</span>
+            </div>
           )}
           <div style={s.qualityRow}>
             <div style={{...s.qualityDot, background: conf >= 85 ? palette.green : conf >= 65 ? '#FF9800' : '#f44336'}}/>
@@ -55,7 +59,10 @@ export const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, 
         <div style={{...s.thcDetailWrap, maxHeight: thcOpen ? 600 : 0, opacity: thcOpen ? 1 : 0, marginTop: thcOpen ? 8 : 0, marginBottom: thcOpen ? 14 : 0}}>
           <div style={{...s.thcDetailBox, borderColor: cfg.color+'33'}}>
             {thcDetail.lowConf && (
-              <p style={s.thcDetailLowConf}>⚠ Confianza baja del modelo. Esta interpretación es orientativa.</p>
+              <div style={s.thcDetailLowConf}>
+                <AlertCircle size={13} strokeWidth={2.5} style={{flexShrink:0, marginTop:1}} />
+                <span>Confianza baja del modelo. Esta interpretación es orientativa.</span>
+              </div>
             )}
             <p style={s.thcDetailSection}>RASGOS DETECTADOS</p>
             <ul style={s.thcDetailList}>
@@ -69,7 +76,7 @@ export const ResultCard = memo(function ResultCard({ result, imagePreview, cfg, 
             </ul>
             <p style={s.thcDetailSection}>INTERPRETACIÓN</p>
             <p style={s.thcDetailText}>{thcDetail.interpretation}</p>
-            <p style={s.thcDetailDisclaimer}>⚠ Estimación visual. No sustituye análisis de laboratorio.</p>
+            <p style={s.thcDetailDisclaimer}>Estimación visual. No sustituye análisis de laboratorio.</p>
           </div>
         </div>
       )}
@@ -168,7 +175,7 @@ const s = {
   resultHeader:  { display:'flex', gap:16, alignItems:'center', marginBottom:16 },
   resultLabel:   { fontSize:22, fontWeight:700, margin:0 },
   resultConf:    { color:'#aaa', fontSize:14, margin:'4px 0 0' },
-  lowConfWarning:{ color:'#f5a623', fontSize:12, margin:'6px 0 0', background:'#1a1200', border:'1px solid rgba(245,166,35,.2)', borderRadius:6, padding:'4px 8px', display:'inline-block' },
+  lowConfWarning:{ color:'#f5a623', fontSize:12, margin:'6px 0 0', background:'#1a1200', border:'1px solid rgba(245,166,35,.2)', borderRadius:6, padding:'4px 8px', display:'inline-flex', alignItems:'center', gap:5 },
   qualityRow:    { display:'flex', alignItems:'center', gap:6, marginTop:4 },
   qualityDot:    { width:8, height:8, borderRadius:'50%', flexShrink:0 },
   resultQuality: { color:'#aaa', fontSize:13, margin:0 },
@@ -181,7 +188,7 @@ const s = {
   thcExpandHint: { color:'#555', fontSize:11, margin:'6px 0 0', letterSpacing:'0.2px' },
   thcDetailWrap: { overflow:'hidden', transition:'max-height 280ms cubic-bezier(.22,1,.36,1), opacity 280ms cubic-bezier(.22,1,.36,1), margin 280ms cubic-bezier(.22,1,.36,1)' },
   thcDetailBox:  { background:palette.surface, border:'1px solid', borderRadius:12, padding:'14px 16px' },
-  thcDetailLowConf:{ color:'#f5a623', fontSize:12, margin:'0 0 12px', background:'#1a1200', border:'1px solid rgba(245,166,35,0.2)', borderRadius:6, padding:'6px 10px' },
+  thcDetailLowConf:{ color:'#f5a623', fontSize:12, margin:'0 0 12px', background:'#1a1200', border:'1px solid rgba(245,166,35,0.2)', borderRadius:6, padding:'6px 10px', display:'flex', alignItems:'flex-start', gap:6 },
   thcDetailSection:{ color:'#555', fontSize:10, fontWeight:700, letterSpacing:'0.8px', margin:'0 0 8px' },
   thcDetailList: { listStyle:'none', padding:0, margin:'0 0 14px' },
   thcDetailItem: { color:'#aaa', fontSize:13, margin:'0 0 5px', lineHeight:1.5 },

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Camera } from 'lucide-react';
 import { LABELS, EXTRA_INFO } from '../shared/labels';
 import { palette } from '../shared/theme';
 import { ResultCard } from './ResultCard';
@@ -18,7 +19,7 @@ export function HistoryView({ history, onClose, onClear }) {
 
         {history.length === 0 && (
           <div style={s.empty}>
-            <div style={s.emptyIcon}>📷</div>
+            <Camera size={44} strokeWidth={1.5} color={palette.dim} style={{display:'block', margin:'0 auto 18px'}} />
             <p style={s.emptyTitle}>Aún no has analizado nada</p>
             <p style={s.emptyText}>Cada análisis se guarda aquí automáticamente.<br/>Tu historial vive en este dispositivo.</p>
             <button style={s.emptyBtn} onClick={onClose}>Analizar mi primera foto →</button>
@@ -28,7 +29,7 @@ export function HistoryView({ history, onClose, onClear }) {
         {expanded ? (
           <>
             <button style={{...s.backBtn, marginBottom:16}} onClick={() => setExpandedId(null)}>← Lista</button>
-            <p style={{color:'#444', fontSize:12, marginBottom:12}}>🕐 {expanded.date}</p>
+            <p style={{color:'#444', fontSize:12, marginBottom:12}}>{expanded.date}</p>
             <ResultCard
               result={expanded.result}
               imagePreview={expanded.imageData}
@@ -48,7 +49,7 @@ export function HistoryView({ history, onClose, onClear }) {
                   <div style={{flex:1}}>
                     <p style={{...s.label, color: c.color}}>{c.emoji} {item.result.display}</p>
                     <p style={s.conf}>Confianza: {(item.result.confidence * 100).toFixed(1)}% · THC: {item.result.thc_estimate}%</p>
-                    <p style={s.date}>🕐 {item.date}</p>
+                    <p style={s.date}>{item.date}</p>
                   </div>
                   <span style={s.arrow}>›</span>
                 </div>
@@ -70,7 +71,6 @@ const s = {
   clearBtn:   { background:'none', border:'none', color:'#f44336', fontSize:14, cursor:'pointer', padding:0 },
 
   empty:      { textAlign:'center', padding:'48px 24px' },
-  emptyIcon:  { fontSize:48, marginBottom:18, opacity:0.6 },
   emptyTitle: { color:palette.text, fontSize:17, fontWeight:600, margin:'0 0 8px', letterSpacing:'-0.2px' },
   emptyText:  { color:palette.muted, fontSize:13, lineHeight:1.6, margin:'0 0 24px' },
   emptyBtn:   { background:palette.greenSoft, color:palette.green, border:`1px solid ${palette.green}40`, borderRadius:980, padding:'10px 20px', fontSize:13, fontWeight:600, cursor:'pointer' },

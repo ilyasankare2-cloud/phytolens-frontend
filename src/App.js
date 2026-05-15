@@ -199,7 +199,7 @@ function AppInner() {
             <p style={s.subtitle}>Identificación inteligente de cannabis</p>
           </div>
           {history.length > 0 && (
-            <button style={s.historyBtn} onClick={() => setHistoryOpen(true)}>Historial · {history.length}</button>
+            <button style={s.historyBtn} onClick={() => setHistoryOpen(true)}>📋 {history.length}</button>
           )}
         </div>
 
@@ -222,13 +222,13 @@ function AppInner() {
             <input ref={inputRef} type="file" accept="image/*" style={{display:'none'}} onChange={e => handleFile(e.target.files[0])} />
 
             <p style={s.disclaimer}>Herramienta informativa. Los resultados son estimaciones de IA, no sustituyen análisis de laboratorio. Solo mayores de edad donde el cannabis sea legal. <a href="/terms.html" style={{color:palette.green}}>Términos</a></p>
-            <button style={{...s.btn, ...((!image||loading) ? s.btnDisabled : {})}} onClick={analyze} disabled={!image||loading}>
+            <button style={{...s.btn, opacity:(!image||loading)?0.6:1, cursor:(!image||loading)?'not-allowed':'pointer'}} onClick={analyze} disabled={!image||loading}>
               {loading ? <span style={s.btnLoading}><span style={s.spinner}/>Analizando con IA…</span> : 'Analizar imagen'}
             </button>
             {loading && (
               <div style={s.skeletonCard}>
                 {slowLoading && (
-                  <p style={s.slowMsg}>⏳ El servidor está despertando, esto puede tardar unos segundos…</p>
+                  <p style={s.slowMsg}>El servidor está despertando, esto puede tardar unos segundos…</p>
                 )}
                 <div className="skeleton" style={{width:120, height:14, marginBottom:10}}/>
                 <div className="skeleton" style={{width:'60%', height:24, marginBottom:8}}/>
@@ -242,7 +242,7 @@ function AppInner() {
             )}
             {error && (
               <div style={s.errorBox}>
-                <span style={{fontSize:18}}>⚠️</span>
+                <AlertCircle size={20} strokeWidth={2} color={palette.error} style={{flexShrink:0, marginTop:1}} />
                 <div>
                   <p style={s.errorTitle}>{error}</p>
                   <button style={s.errorRetry} onClick={analyze} disabled={!image||loading}>Reintentar</button>
@@ -264,9 +264,9 @@ function AppInner() {
                       }}
                       disabled={sharing}
                     >
-                      {sharing ? <span style={s.btnLoading}><span style={s.spinnerSm}/>Generando…</span> : 'Compartir resultado'}
+                      {sharing ? <span style={s.btnLoading}><span style={s.spinnerSm}/>Generando…</span> : '↑ Compartir resultado'}
                     </button>
-                    <button style={s.actionBtn} onClick={reset}>Nueva foto</button>
+                    <button style={s.actionBtn} onClick={reset}>🔄 Nueva foto</button>
                   </div>
                 )}
 
@@ -293,6 +293,10 @@ function AppInner() {
                   const res = await fetch(sharePreview);
                   const blob = await res.blob();
                   const file = new File([blob], 'trichai.png', { type: 'image/png' });
+
+
+
+
                   const text = `${result.display} · THC ${result.thc_estimate}% · Confianza ${(result.confidence * 100).toFixed(0)}%\n\nhttps://trichai.xyz`;
                   if (navigator.share && navigator.canShare?.({ files: [file] })) {
                     try { await navigator.share({ title: `TrichAI — ${result.display}`, text, files: [file] }); setSharePreview(null); return; } catch {}
@@ -315,7 +319,7 @@ function AppInner() {
 
             {contribSent ? (
               <div style={s.successBox}>
-                <span style={{fontSize:48}}>🙌</span>
+                <CheckCircle2 size={56} strokeWidth={1.5} color={palette.green} style={{display:'block', margin:'0 auto 16px'}} />
                 <p style={s.successTitle}>¡Gracias por contribuir!</p>
                 <p style={s.successSub}>Tu foto ayuda a mejorar TrichAI.</p>
                 <button style={s.btn} onClick={reset}>Contribuir otra</button>
@@ -325,7 +329,7 @@ function AppInner() {
                 <div style={s.dropzone} onClick={() => contribRef.current.click()} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}>
                   {preview
                     ? <img src={preview} alt="preview" style={s.preview} />
-                    : <div style={s.placeholder}><span style={{fontSize:48}}>📷</span><p style={s.dropText}>Sube tu foto aquí</p></div>
+                    : <div style={s.placeholder}><Camera size={44} strokeWidth={1.5} color={palette.dim} /><p style={s.dropText}>Sube tu foto aquí</p></div>
                   }
                 </div>
                 <input ref={contribRef} type="file" accept="image/*" style={{display:'none'}} onChange={e => handleFile(e.target.files[0])} />
@@ -340,8 +344,8 @@ function AppInner() {
                   ))}
                 </div>
                 {contribError && <p style={s.error}>{contribError}</p>}
-                <button style={{...s.btn, ...((!image||!contribLabel||contribLoading) ? s.btnDisabled : {})}} onClick={contribute} disabled={!image||!contribLabel||contribLoading}>
-                  {contribLoading ? <span style={s.btnLoading}><span style={s.spinner}/>Enviando…</span> : 'Enviar foto'}
+                <button style={{...s.btn, opacity:(!image||!contribLabel||contribLoading)?0.5:1}} onClick={contribute} disabled={!image||!contribLabel||contribLoading}>
+                  {contribLoading ? 'Enviando...' : 'Enviar foto'}
                 </button>
               </>
             )}
@@ -380,8 +384,7 @@ const s = {
   dropText:      { color:'#444', fontSize:14, marginTop:8 },
   disclaimer:    { color:'#3a3a3a', fontSize:12, lineHeight:1.5, marginBottom:12, textAlign:'center' },
   preview:       { width:'100%', maxHeight:300, objectFit:'cover' },
-  btn:           { width:'100%', padding:'14px 0', background:palette.green, color:'#000', border:'none', borderRadius:12, fontSize:15, fontWeight:700, letterSpacing:'-0.2px', cursor:'pointer', marginBottom:16, boxShadow:'0 1px 2px rgba(0,0,0,0.3), 0 10px 28px rgba(48,209,88,0.22)' },
-  btnDisabled:   { background:palette.card, color:palette.dim, boxShadow:'none', cursor:'not-allowed' },
+  btn:           { width:'100%', padding:'14px 0', background:palette.green, color:'#fff', border:'none', borderRadius:10, fontSize:16, fontWeight:600, cursor:'pointer', marginBottom:16 },
   error:         { color:'#f44336', textAlign:'center', fontSize:14, marginBottom:12 },
 
   actionRow:        { display:'flex', gap:8, marginBottom:16 },
