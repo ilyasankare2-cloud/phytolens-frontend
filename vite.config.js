@@ -26,6 +26,15 @@ export default defineConfig({
   build: {
     outDir: 'build', // keep CRA-compatible output dir for Vercel
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react':  ['react', 'react-dom'],
+          'vendor-sentry': ['@sentry/browser'],
+          'vendor-icons':  ['lucide-react'],
+        },
+      },
+    },
   },
   test: {
     globals: true,
