@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { AlertCircle, CheckCircle2, Camera } from 'lucide-react';
 import { LABELS, EXTRA_INFO, CONTRIB_LABELS } from './shared/labels';
 import { palette } from './shared/theme';
 import { compressImage } from './utils/imageCompress';
-import { loadHistory, saveHistory } from './utils/historyStorage';
+import { loadSecureHistory as loadHistory, saveSecureHistory as saveHistory } from './utils/secureHistoryStorage';
 import { shareResult } from './utils/shareCard';
+import RateLimiter from './utils/rateLimiter';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ResultCard } from './components/ResultCard';
 import { HistoryView } from './components/HistoryView';
@@ -11,7 +13,11 @@ import { CookieBanner } from './components/CookieBanner';
 import { AppFooter } from './components/AppFooter';
 import { FeedbackPrompt } from './components/FeedbackPrompt';
 
-const API = 'https://phytolens-backend-production.up.railway.app';
+const API = import.meta.env.VITE_API_URL || 'https://phytolens-backend-production.up.railway.app';
+
+// Rate limiter: 20 requests per 60 seconds
+const analyzeLimiter = new RateLimiter(20, 60, 'trichai_analyze_rate_limit');
+const contributeLimiter = new RateLimiter(10, 60, 'trichai_contribute_rate_limit');
 
 // Fire GA only when user accepted analytics. Consent is gated at window.gtag init.
 function track(eventName, params = {}) {
@@ -83,6 +89,16 @@ function AppInner() {
 
   const analyze = async () => {
     if (!image) return;
+
+    // Check rate limit
+    if (!analyzeLimiter.isAllowed()) {
+      const waitMs = analyzeLimiter.getWaitTime();
+      const waitSecs = Math.ceil(waitMs / 1000);
+      setError(`Demasiados análisis. Espera ${waitSecs}s antes de intentar de nuevo.`);
+      track('rate_limit_exceeded', { endpoint: 'analyze', wait_seconds: waitSecs });
+      return;
+    }
+
     setLoading(true);
     setSlowLoading(false);
     setError(null);
@@ -113,6 +129,7 @@ function AppInner() {
         reader.onload = (e) => {
           const entry = {
             id:        Date.now(),
+            timestamp: Date.now(),
             date:      new Date().toLocaleString('es-ES'),
             result:    data.result,
             imageData: e.target.result,
@@ -141,6 +158,16 @@ function AppInner() {
 
   const contribute = async () => {
     if (!image || !contribLabel) return;
+
+    // Check rate limit for contributions
+    if (!contributeLimiter.isAllowed()) {
+      const waitMs = contributeLimiter.getWaitTime();
+      const waitSecs = Math.ceil(waitMs / 1000);
+      setContribError(`Demasiadas contribuciones. Espera ${waitSecs}s.`);
+      track('rate_limit_exceeded', { endpoint: 'contribute', wait_seconds: waitSecs });
+      return;
+    }
+
     setContribLoading(true);
     setContribError(null);
     try {
